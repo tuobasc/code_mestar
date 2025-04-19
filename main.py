@@ -63,7 +63,7 @@ def main():
             examples = problem["examples"]
             test_examples = problem["test_examples"] # true test_cases
             query_code_master(problem_desc=problem_desc, samples=examples, test_samples=test_examples,
-                              counterfactual_thinking=args.counterfactual_thinking,
+                              counterfactual_thinking=args.counterfactual_think,
                               greedy_search_iterations=args.greedy_search_iterations,
                               evolution_iterations=args.evolution_iterations)
             pass #todo: not finished yet

@@ -84,3 +84,63 @@ Your response must follow the following json format:
     "revised_plan": "Give a correct plan to solve the problem.",
 }}
 """
+
+thinker_understand_prompt = """You are an expert in algorithms and coding.
+Given a competitive programming problem and some test cases, please explain how to get the output from the input. 
+## Problem: 
+{problem_desc} 
+## Test Cases Input(with function call)/Outputs: 
+{samples}
+
+Your response must follow the following json format:
+```json
+[
+    {{
+        "case_id": "the case id and counting starts form 0",
+        "input": "the input of the test case", 
+        "output": "the output of the test case", 
+        "explanation": "the explanation about how to get the output of from the input in this test case",
+    }},
+]
+"""
+
+thinker_counter_prompt = """You are an expert in algorithms and coding.
+Here is a competitive programming problem along with its test cases, but these test cases only cover partial or general scenarios of the problem. 
+Please consider the edge cases, i.e., special scenarios, and create new test cases. 
+Additionally, for correctly handling these cases, what should we pay attention to during coding?
+
+## Problem: 
+{problem_desc} 
+## Test Cases Input(with function call)/Outputs: 
+{samples}
+
+Your response must follow the following json format:
+[
+    {{
+        "new_case_id": "the case id and counting starts form 0",
+        "input": "the input of the test case, must be a function call", 
+        "output": "the expected output of the test case",
+        "explanation": "the explanation about how to get the output of from the input in this test case",
+        "notes": "some general notes or hints about how to correctly handle such cases",
+    }},
+]
+"""
+
+thinker_normal_prompt = """You are an expert in algorithms and coding.
+Here is a competitive programming problem along with its test cases (if any). 
+Please consider some specific cases or scenarios, and explain what general strategy can we take to effectively handle these cases or scenarios. 
+
+## Problem: 
+{problem_desc} 
+## Test Cases Input(with function call)/Outputs (if any): 
+{samples}
+
+Your response must follow the following json format:
+[
+    {{
+        "case_id": "The id for different cases and scenarios. Counting starts form 0.",
+        "specific_case": "The specific case or scenario.",
+        "strategy": "The explanation about what general strategy can we take to effectively handle such cases or scenarios.",
+    }},
+]
+"""

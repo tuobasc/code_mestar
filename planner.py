@@ -8,14 +8,18 @@ class Planner:
         self.input_tokens_counts = 0
         self.output_tokens_counts = 0
 
-    def planning(self, problem_desc, samples, notes="", k_sample=5):
+    def planning(self, problem_desc, samples, additional_samples=None, notes="", k_sample=5):
         knowledge_base = []
         early_stopping_control = False
         temperature_control = 0
         input_tokens_total = 0
         output_tokens_total = 0
         trys = 0
-        samples_info = sample_decoder(samples)
+
+        if additional_samples:
+            samples_info = sample_decoder(samples + additional_samples)
+        else:
+            samples_info = sample_decoder(samples)
 
         while not early_stopping_control and trys < k_sample:
             planner_query = planner_prompt.format(problem_desc=problem_desc, samples=samples_info, notes=notes)
@@ -41,7 +45,7 @@ class Planner:
             trys += 1
         self.input_tokens_counts += input_tokens_total
         self.output_tokens_counts += output_tokens_total
-        return knowledge_base, notes
+        return knowledge_base
 
     def print_plans(self):
         print("Log: Plans")

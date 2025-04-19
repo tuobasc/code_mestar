@@ -30,12 +30,13 @@ def load_dataset(file_path, split_test_ratio=0.95):
             problem_description = data.get('description', '')
             raw_cases = data.get('sample_io', []) + data.get('test_list', [])
             correct_cases = []
+            function_name = data.get('starter_code', '')
             for case in raw_cases:
                 case_dict = dict()
                 if identify(case["input"]):
-                    case_dict['input'] = "problem_solution(" + case['input'] + ")"
+                    case_dict['input'] = f"{function_name}(" + case['input'] + ")"
                 else:
-                    case_dict['input'] = "problem_solution(\"" + case['input'] + "\")"
+                    case_dict['input'] = f"{function_name}(\"" + case['input'] + "\")"
                 case_dict['output'] = str(case['output'])
                 correct_cases.append(case_dict)
             raw_cases = correct_cases

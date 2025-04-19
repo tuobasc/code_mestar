@@ -1,19 +1,21 @@
+from thinker import Thinker
 from planner import Planner
 from coder import Coder
 
 def query_code_master(problem_desc, samples, test_samples=None, counterfactual_thinking=False, k_sample=3, greedy_search_iterations=3, evolution_iterations=2):
     if counterfactual_thinking:
-        notes = ""
+        thinker = Thinker(thinking_method="counterfactual")
     else:
-        notes = ""
-    # Todo: remake the samples structures
+        thinker = Thinker(thinking_method="normal")
+    good_samples = thinker.understand(problem_desc, samples)
+    additional_samples, notes = thinker.specific_thinking(problem_desc, good_samples)
     planner = Planner()
-    plans, notes = planner.planning(problem_desc, samples, notes, k_sample)
+    plans = planner.planning(problem_desc, samples, additional_samples, notes, k_sample)
     planner.plans = sorted(plans, key=lambda plan: plan["confidence"], reverse=True)
     planner.print_plans()
     coder = Coder()
     print("Logs: Try to solve the problem...")
-    code = coder.writing(problem_desc, planner.plans[0]["plan"], samples, notes)
+    code = coder.writing(problem_desc, planner.plans[0]["plan"], samples, additional_samples, notes)
     print("Logs: Code\n", code)
     true_res, run_res, pass_count = coder.run(code, samples)
     if pass_count == len(true_res):
