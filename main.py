@@ -11,7 +11,7 @@ parser.add_argument('--dataset_name', type=str, default="APPS", help='the name o
 parser.add_argument('--split_test_ratio', type=float, default=0.9, help='the ratio of test instances')
 parser.add_argument('--method', type=str, default="greedy", choices=["greedy", "code-master", "cot"],help='the method to use')
 parser.add_argument('--model', type=str, default="gpt-4o-mini", choices=["gpt-4o-mini", "deepseek-r1", "gpt-4o"], help='api model')
-parser.add_argument('--counterfactual_think', type=int, default=0, help='if think before plan')
+parser.add_argument('--counterfactual_think', action="store_true", help='if think before plan')
 parser.add_argument('--greedy_search_iterations', type=int, default=3, help='code master max debug times')
 parser.add_argument('--evolution_iterations', type=int, default=3, help='code master max evolution times')
 
