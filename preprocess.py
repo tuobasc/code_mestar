@@ -3,7 +3,7 @@ import re
 import random
 import json
 from coder import Coder
-from src.utils import load_jsonl
+from src.utils import load_jsonl, identify
 from tqdm import tqdm
 
 def load_dataset(file_path, split_test_ratio=0.95):
@@ -32,8 +32,11 @@ def load_dataset(file_path, split_test_ratio=0.95):
             correct_cases = []
             for case in raw_cases:
                 case_dict = dict()
-                case_dict['input'] = "problem_solution(" + case['input'] + ")"
-                case_dict['output'] = case['output']
+                if identify(case["input"]):
+                    case_dict['input'] = "problem_solution(" + case['input'] + ")"
+                else:
+                    case_dict['input'] = "problem_solution(\"" + case['input'] + "\")"
+                case_dict['output'] = str(case['output'])
                 correct_cases.append(case_dict)
             raw_cases = correct_cases
             ground_truth = None
@@ -152,8 +155,8 @@ def _split_examples(all_examples, test_size=0.2, seed=42):
     return examples[:split_at], examples[split_at:]
 
 if __name__ == '__main__':
-    filepath = 'MBPP_ET.jsonl'
-    saved_filepath = "MBPP_ET_preprocessed.json"
+    filepath = 'HumanEvalET.jsonl'
+    saved_filepath = "HumanEvalET_preprocessed.json"
     split_test_ratio = 0.9
 
     problems = load_dataset(f"data/{filepath}", split_test_ratio=split_test_ratio)
@@ -166,22 +169,28 @@ if __name__ == '__main__':
         if len(problem["problem_description"].split(" ")) >= 100000:
             continue
         total_samples = problem["examples"] + problem["test_examples"]
+        # print(problem["ground_truth"])
         test_cases_res, exec_res, pass_count = coder.run(problem["ground_truth"], total_samples, verbose=True)
         good_samples = []
         for i in range(len(test_cases_res)):
             t_res = test_cases_res[i]
             r_res = exec_res[i]
+            # print(t_res)
+            # print(r_res)
             if t_res == r_res:
+                # print("get here")
                 good_samples.append(total_samples[i])
+                # print(good_samples)
             else:
                 try:
                     if abs(float(t_res) - float(r_res)) < 1e-6:
+                        # print("get here")
                         good_samples.append(total_samples[i])
                 except ValueError:
                     pass
         good_problem = {"problem_description": problem["problem_description"], "ground truth": problem["ground_truth"], "instances": good_samples}
-        # print(good_problem)
+        print(good_samples)
         good_problems.append(good_problem)
-    print(pass_count_pro)
+    # print(pass_count_pro)
     with open(f"data/{saved_filepath}", "w") as f:
         json.dump(good_problems, f, indent=4)

@@ -7,7 +7,7 @@ from query import query_code_master
 from greedy import query_greedy
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset_name', type=str, default="HumanEvalET", help='the name of dataset')
+parser.add_argument('--dataset_name', type=str, default="APPS", help='the name of dataset')
 parser.add_argument('--split_test_ratio', type=float, default=0.9, help='the ratio of test instances')
 parser.add_argument('--method', type=str, default="greedy", choices=["greedy", "code-master", "cot"],help='the method to use')
 parser.add_argument('--model', type=str, default="gpt-4o-mini", choices=["gpt-4o-mini", "deepseek-r1", "gpt-4o"], help='api model')
@@ -30,31 +30,30 @@ elif args.model == "gpt-4o":
     output_token_cost = 0
 
 def main():
-    if "HumanEvalET" in args.dataset_name:
-        with open("data/HumanEvalET_preprocessed.json", "r") as f:
-            problems = json.loads(f)
+    if "HumanEvalET" in args.dataset_name or "MBPP_ET" in args.dataset_name:
+        with open(f"data/{args.dataset_name}_preprocessed.json", "r") as f:
+            problems = json.load(f)
             data = []
             for problem in problems:
+                if not problem["instances"]:
+                    print("Warning: Drop an unsatisfied problem")
+                    continue
                 meta_data = dict()
                 meta_data["problem_description"] = problem["problem_description"]
-                saved_samples_length = int((1 - args.split_test_ratio) * len(problem["instance"])) if int((1 - args.split_test_ratio) * len(problem["instance"])) else 1
-                meta_data["example"] = problem["instance"][:saved_samples_length]
-                meta_data["test_examples"] = problem["instance"][saved_samples_length:]
-                data.append(meta_data)
-    elif "MBPP_ET" in args.dataset_name:
-        with open("data/MBPP_ET_preprocessed.json", "r") as f:
-            problems = json.loads(f)
-            data = []
-            for problem in problems:
-                meta_data = dict()
-                meta_data["problem_description"] = problem["problem_description"]
-                saved_samples_length = int((1 - args.split_test_ratio) * len(problem["instance"])) if int(
-                    (1 - args.split_test_ratio) * len(problem["instance"])) else 1
-                meta_data["example"] = problem["instance"][:saved_samples_length]
-                meta_data["test_examples"] = problem["instance"][saved_samples_length:]
+                saved_samples_length = int((1 - args.split_test_ratio) * len(problem["instances"])) if int((1 - args.split_test_ratio) * len(problem["instances"])) else 1
+                meta_data["example"] = problem["instances"][:saved_samples_length]
+                meta_data["test_examples"] = problem["instances"][saved_samples_length:]
                 data.append(meta_data)
     elif "APP" in args.dataset_name:
-        data = load_dataset(args.dataset_name, args.split_test_ratio)
+        problems = load_dataset("data/APPS_selected150.jsonl", args.split_test_ratio)
+        # Drop the problem with too long context
+        data = []
+        for problem in problems:
+            if len(problem["problem_description"].split(" ")) >= 20000:
+                print("Warning: Drop an unsatisfied problem")
+                continue
+            else:
+                data.append(problem)
     else:
         raise RuntimeError
 

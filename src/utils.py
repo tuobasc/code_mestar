@@ -1,4 +1,5 @@
 import json
+import ast
 from openai import AzureOpenAI
 
 client = AzureOpenAI(
@@ -52,3 +53,27 @@ def sample_decoder(samples):
             samples_info_list.append(f"Explanation: {sample['explanation']}")
     sample_info = "\n".join(samples_info_list)
     return sample_info
+
+def identify(s):
+    """
+    判断输入字符串 s 是单个数值、列表，还是普通字符串。
+
+    返回格式：(kind, value)
+      - kind: 'number'、'list' 或 'string'
+    """
+    s_stripped = s.strip()
+    try:
+        val = ast.literal_eval(s_stripped)
+    except (ValueError, SyntaxError):
+        # 不能被解析为任何字面量
+        return False
+
+    # 解析成功，按类型区分
+    if isinstance(val, (int, float)):
+        return True
+    if isinstance(val, list):
+        return True
+
+    # 解析为其它 Python 类型（比如 dict、tuple、str 字面量等），
+    # 我们均视作普通字符串
+    return False
