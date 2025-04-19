@@ -1,11 +1,12 @@
 import os
 import re
 import random
+import json
+from coder import Coder
+from src.utils import load_jsonl
+from tqdm import tqdm
 
-from src.utils import load_jsonl, sample_encoder
-
-# Todo: ablation, 这里划分比例修改一下, 比如 0.8, 0.9, 0.95是否会对方法产生影响
-def load_dataset(file_path, split_test_ratio=0.9):
+def load_dataset(file_path, split_test_ratio=0.95):
     datas = load_jsonl(file_path)
     problems = []
     filename = os.path.basename(file_path)
@@ -14,16 +15,28 @@ def load_dataset(file_path, split_test_ratio=0.9):
         if filename == 'HumanEvalET.jsonl':
             problem_description = data.get('prompt', '')
             raw_cases = data.get('test_case_list', [])
+            split_sentence = problem_description.split('\n')
+            definition = [s for s in split_sentence if "def" in s]
+            ground_truth = definition[0] + "\n" + data["canonical_solution"]
             splitter = _split_humanEval_test_case
 
         elif filename == 'MBPP_ET.jsonl':
             problem_description = data.get('text', '')
             raw_cases = data.get('test_list', [])
+            ground_truth = data["code"]
             splitter = _split_MBPP_test_case
 
         elif filename in ('APPS_selected150.jsonl', 'CodeContest.jsonl'):
             problem_description = data.get('description', '')
             raw_cases = data.get('sample_io', []) + data.get('test_list', [])
+            correct_cases = []
+            for case in raw_cases:
+                case_dict = dict()
+                case_dict['input'] = "problem_solution(" + case['input'] + ")"
+                case_dict['output'] = case['output']
+                correct_cases.append(case_dict)
+            raw_cases = correct_cases
+            ground_truth = None
             splitter = None
 
         else:
@@ -31,184 +44,144 @@ def load_dataset(file_path, split_test_ratio=0.9):
 
         all_examples = []
         if splitter:
-            # need to parse each raw string case
             for tc in raw_cases:
                 inp, out = splitter(tc)
                 all_examples.append({"input": inp, "output": out})
         else:
-            # already paired
             all_examples = raw_cases.copy()
 
         train_examples, test_examples = _split_examples(all_examples, test_size=split_test_ratio)
+        print(train_examples[0])
+        print(test_examples[0])
         problems.append({
             "problem_description": problem_description,
             "examples": train_examples,
-            "test_examples": test_examples
+            "test_examples": test_examples,
+            "ground_truth": ground_truth
         })
 
     return problems
 
 
 def _split_humanEval_test_case(test_case):
-    input_str, output = None, None
+    test = test_case.strip()
+    if test.startswith("assert "):
+        test = test[len("assert "):]
 
-    test_case = test_case.strip()
-    # Remove the 'assert ' prefix if present.
-    if test_case.startswith("assert "):
-        test_case = test_case[len("assert "):]
-
-    # abs(function_call(params) - expected) < tolerance
+    # 各种匹配模式
     type1_pattern = re.compile(r"abs\w+\((.*?)\) - (.*?)\) <", re.DOTALL)
-    # (func(params) == expected), 'extra'
     type2_pattern = re.compile(r"\((\w+\((.*)\)) == (.*)\)(?:,\s*.*)?", re.DOTALL)
-    # function_name(params) == expected
     type3_pattern = re.compile(r"(\w+\(.*\))\s*==\s*(.*)", re.DOTALL)
-    # function_call(params) is True/False
     type4_pattern = re.compile(r"(\w+\(.*\))\s+is\s+(True|False)", re.DOTALL)
-    # not function_call(params)
     type5_pattern = re.compile(r"not\s+(\w+)\((.*)\)", re.DOTALL)
-    # function_call(params)
     type6_pattern = re.compile(r"(\w+)\((.*)\)", re.DOTALL)
 
-    # Type 1 abs(function_call(params) - expected) < tolerance
-    type1_match = type1_pattern.search(test_case)
-    if type1_match:
-        # Extract function call and expected output (direct comparison)
-        input_str = type1_match.group(1).strip()  # The function call part
-        output = type1_match.group(2).strip()  # The expected output
-        return input_str, output
+    # Type 1: abs(func_call(...) - expected) < tol
+    m1 = type1_pattern.search(test)
+    if m1:
+        func_call = m1.group(1).strip()
+        output = m1.group(2).strip()
+        return func_call, output
 
-    # Type 2 (func(params) == expected), 'extra'
-    type2_match = type2_pattern.search(test_case)
-    if type2_match:
-        # Extract input function call and comparison operator
-        input_str = type2_match.group(2).strip()  # The function call part
-        output = type2_match.group(3).strip()  # The expected output
-        return input_str, output
+    # Type 2: (func_call(...) == expected), 'extra'
+    m2 = type2_pattern.search(test)
+    if m2:
+        func_call = m2.group(1).strip()
+        output = m2.group(3).strip()
+        return func_call, output
 
-    # Type 3 function_name(params) == expected
-    # Type 4 function_call(params) is True/False
-    type3or4_match = type3_pattern.search(test_case) if type3_pattern.search(test_case) else type4_pattern.search(
-        test_case)
-    if type3or4_match:
-        func_call = type3or4_match.group(1).strip()
-        output = type3or4_match.group(2).strip()
-        inner_match = re.match(r"\w+\((.*)\)", func_call)
-        if inner_match:
-            input_str = inner_match.group(1).strip()
-        else:
-            input_str = func_call
-        return input_str, output
+    # Type 3: func_call(...) == expected
+    # Type 4: func_call(...) is True/False
+    m3 = type3_pattern.search(test)
+    m4 = type4_pattern.search(test)
+    m34 = m3 or m4
+    if m34:
+        func_call = m34.group(1).strip()
+        output = m34.group(2).strip()
+        return func_call, output
 
-    # Type 5 not function_call(params)
-    type5_match = type5_pattern.search(test_case)
-    if type5_match:
-        input_str = type5_match.group(2).strip()
-        output = "False"
-        return input_str, output
+    # Type 5: not func_call(...)
+    m5 = type5_pattern.search(test)
+    if m5:
+        fname = m5.group(1).strip()
+        args = m5.group(2).strip()
+        func_call = f"{fname}({args})"
+        return func_call, "False"
 
-    # Type 6 function_call(params)
-    type6_match = type6_pattern.search(test_case)
-    if type6_match:
-        input_str = type6_match.group(2).strip()
-        output = "True"
-        return input_str, output
+    # Type 6: func_call(...)
+    m6 = type6_pattern.search(test)
+    if m6:
+        fname = m6.group(1).strip()
+        args = m6.group(2).strip()
+        func_call = f"{fname}({args})"
+        return func_call, "True"
 
-    # If no valid match found, raise an error
-    if input_str is None or output is None:
-        raise ValueError(f"Invalid test case format: {test_case}")
-
-    return input_str, output
+    raise ValueError(f"Invalid test case format: {test_case}")
 
 
 def _split_MBPP_test_case(test_case):
-    input_str, output = None, None
+    test = test_case.strip()
+    if test.startswith("assert "):
+        test = test[len("assert "):]
 
-    test_case = test_case.strip()
-    # Remove the 'assert ' prefix if present.
-    if test_case.startswith("assert "):
-        test_case = test_case[len("assert "):]
-
-    # function_name(params) == expected
+    # Type 1: func_call(...) == expected
     type1_pattern = re.compile(r"(\w+\s*\(.*\))\s*==\s*(.*)", re.DOTALL)
-    type1_match = type1_pattern.search(test_case)
-    if type1_match:
-        func_call = type1_match.group(1).strip()
-        output = type1_match.group(2).strip()
-        inner_match = re.match(r"\w+\((.*)\)", func_call)
-        if inner_match:
-            input_str = inner_match.group(1).strip()
-        else:
-            input_str = func_call
-        return input_str, output
+    m1 = type1_pattern.search(test)
+    if m1:
+        func_call = m1.group(1).strip()
+        output = m1.group(2).strip()
+        return func_call, output
 
-    # abs(function_call(params) - expected) < tolerance
+    # Type 2: abs(func_call(...) - expected) < tol
     type2_pattern = re.compile(r"abs\w+\((.*?)\) - (.*?)\) <", re.DOTALL)
-    type2_match = type2_pattern.search(test_case)
-    if type2_match:
-        # Extract function call and expected output (direct comparison)
-        input_str = type2_match.group(1).strip()  # The function call part
-        output = type2_match.group(2).strip()  # The expected output
-        return input_str, output
+    m2 = type2_pattern.search(test)
+    if m2:
+        func_call = m2.group(1).strip()
+        output = m2.group(2).strip()
+        return func_call, output
 
-    if input_str is None or output is None:
-        raise ValueError(f"Invalid test case format: {test_case}")
-
-    return input_str, output
+    raise ValueError(f"Invalid test case format: {test_case}")
 
 
 def _split_examples(all_examples, test_size=0.2, seed=42):
-    """Shuffle and split examples into train and test."""
+    split_at = int(len(all_examples) * (1 - test_size))
+    split_at = split_at if split_at > 0 else 1
     random.seed(seed)
     examples = all_examples[:]  # copy
     random.shuffle(examples)
-    split_at = int(len(examples) * (1 - test_size))
     return examples[:split_at], examples[split_at:]
 
-
 if __name__ == '__main__':
-    filepath = 'HumanEvalET.jsonl'
+    filepath = 'MBPP_ET.jsonl'
+    saved_filepath = "MBPP_ET_preprocessed.json"
+    split_test_ratio = 0.9
 
-    if filepath == 'HumanEvalET.jsonl':
-        # try split humanEval test case
-        # Type 1
-        print(_split_humanEval_test_case(
-            "assert abs(mean_absolute_deviation([1.072, 7.932, 1.603]) - 2.930888888888889) < 1e-6"))
-        print(_split_humanEval_test_case("assert abs(mean_absolute_deviation([1.0, 2.0, 3.0]) - 2.0/3.0) < 1e-6"))
-        # Type 2
-        print(_split_humanEval_test_case("assert string_xor('9899538', '0376864') == '1111111'"))
-        print(_split_humanEval_test_case('assert has_close_elements([4.88, 7.89, 3.67, 5.68, 4.88], 2.06) == True'))
-        print(_split_humanEval_test_case(
-            "assert separate_paren_groups(\"(()())(()())(())\") == ['(()())', '(()())', '(())']"))
-        print(_split_humanEval_test_case("assert truncate_number(3.952) == 0.952"))
-        print(_split_humanEval_test_case("assert is_simple_power(1, 1)==True"))
-        print(_split_humanEval_test_case("assert (find_max([\"aaaaaaa\", \"bb\", \"cc\"]) == \"aaaaaaa\"), 't3'"))
-        print(_split_humanEval_test_case("assert generate_integers(130, 1) == [2, 4, 6, 8]"))
-        print(_split_humanEval_test_case("assert string_to_md5(\"WGCJWEUA\") == '00e78877b3373720890110d1b297d370'"))
-        # Type 3
-        print(_split_humanEval_test_case("assert not candidate(\"<<<><>>>>\")"))
-        print(_split_humanEval_test_case("assert candidate(\"<><><<<><><>><>><<><><<>>>\")"))
-        # Type 4
-        print(_split_humanEval_test_case("assert candidate([3], 5) is True"))
-        print(_split_humanEval_test_case("assert candidate([1, 2], 5) is False"))
+    problems = load_dataset(f"data/{filepath}", split_test_ratio=split_test_ratio)
 
-        # try load HumanEvalET.jsonl
-        problems = load_dataset("data/HumanEvalET.jsonl")
-        print(problems.pop())
-
-    if filepath == 'MBPP_ET.jsonl':
-        # Type 1
-        print(_split_MBPP_test_case("is_Diff (12345) == False"))
-        print(_split_MBPP_test_case("change_date_format(\"2-:9|&#>5\")  == \"-:9|&#>5\""))
-
-        problems = load_dataset("data/MBPP_ET.jsonl")
-        print(problems.pop())
-
-    if filepath == 'APPS_selected150.jsonl':
-        problems = load_dataset("data/APPS_selected150.jsonl")
-        print(problems.pop())
-
-    if filepath == 'CodeContest.jsonl':
-        problems = load_dataset("data/CodeContest.jsonl")
-        print(problems.pop())
-
+    # self-checking, please do not delete
+    coder = Coder()
+    pass_count_pro = 0
+    good_problems = []
+    for _, problem in tqdm(enumerate(problems), total=len(problems), desc="Self-checking"):
+        if len(problem["problem_description"].split(" ")) >= 100000:
+            continue
+        total_samples = problem["examples"] + problem["test_examples"]
+        test_cases_res, exec_res, pass_count = coder.run(problem["ground_truth"], total_samples, verbose=True)
+        good_samples = []
+        for i in range(len(test_cases_res)):
+            t_res = test_cases_res[i]
+            r_res = exec_res[i]
+            if t_res == r_res:
+                good_samples.append(total_samples[i])
+            else:
+                try:
+                    if abs(float(t_res) - float(r_res)) < 1e-6:
+                        good_samples.append(total_samples[i])
+                except ValueError:
+                    pass
+        good_problem = {"problem_description": problem["problem_description"], "ground truth": problem["ground_truth"], "instances": good_samples}
+        # print(good_problem)
+        good_problems.append(good_problem)
+    print(pass_count_pro)
+    with open(f"data/{saved_filepath}", "w") as f:
+        json.dump(good_problems, f, indent=4)

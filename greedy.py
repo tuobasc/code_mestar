@@ -6,9 +6,11 @@ Given a competitive programming problem, please generate a python code to solve 
 ## Problem: 
 {problem_desc} 
 ## Sample Input/Outputs: 
-We will test your code with the following examples.
+We will test your solution through the following function call.
 {samples} 
+## Notes:
 Please follow the plan step by step and realize the code. No need to include test code.
+Please make sure your code complies with the function call method
 
 Your response must follow the following format:
 ```python

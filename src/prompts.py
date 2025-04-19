@@ -51,11 +51,12 @@ Given a competitive programming problem, please generate Python code to solve th
 ## Plan:
 {plan}
 ## Sample Input/Outputs: 
-We will test your code with the following examples.
+We will test your solution through the following function call.
 {samples} 
 ## Notes:
 {notes}
 Please follow the plan step by step and realize the code. No need to include test code.
+Please make sure your code complies with the function call method.
 
 Your response must follow the following format:
 ```python

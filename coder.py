@@ -22,10 +22,12 @@ class Coder:
         code = parser_codes(code)
         return code
 
-    def run(self, code, samples):
+    def run(self, code, samples, verbose=False):
         # Todo: 如果是开放式问题，例如CO，这里需要设计另一种test_case paradigm. 或者用另一个run函数
         test_cases_main = [sample["input"] for sample in samples]
         test_cases_res = [sample["output"] for sample in samples]
+        print("test_cases_main", test_cases_main)
+        print("test_cases_res", test_cases_res)
 
         nb = nbformat.v4.new_notebook()
         code_cell_function = nbformat.v4.new_code_cell(code)
@@ -62,12 +64,19 @@ class Coder:
                         output_text += tb[-1]
             exec_res.append(output_text.strip())
 
-        print("Logs: Test cases")
-        print("True: ", test_cases_res)
-        print("Running: ", exec_res)
+        if verbose:
+            print("Logs: Test cases")
+            print("True: ", test_cases_res)
+            print("Running: ", exec_res)
         pass_count = 0
         for t_res, r_res in zip(test_cases_res, exec_res):
             if t_res == r_res:
                 pass_count += 1
+            else:
+                try:
+                    if abs(float(t_res) - float(r_res)) < 1e-6:
+                        pass_count += 1
+                except Exception as e:
+                    pass
 
         return test_cases_res, exec_res, pass_count
