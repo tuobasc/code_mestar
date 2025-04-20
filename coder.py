@@ -11,6 +11,19 @@ import sys
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
+
+def run_notebook(ep, nb, return_dict):
+    try:
+        ep.preprocess(nb, {})
+        return_dict['result'] = None  # 执行成功标志
+        return_dict['nb'] = nb       # 返回值
+    except Exception as e:
+        return_dict['result'] = traceback.format_exc()    # 异常信息
+        return_dict['nb'] = None     # 返回值为 None
+    # finally:
+    #     return nb
+
+
 class Coder:
     def __init__(self):
         self.input_tokens_counts = 0
@@ -49,11 +62,26 @@ class Coder:
 
         ep = ExecutePreprocessor(kernel_name="python3", allow_errors=True)
 
-        try:
-            ep.preprocess(nb, {})  # 执行 notebook
-        except Exception as e:
-            print("执行 Notebook 过程中出现错误：", e)
+        timeout_tag = 0
 
+        manager = multiprocessing.Manager()
+        return_dict = manager.dict()
+        p = multiprocessing.Process(target=run_notebook, args=(ep, nb, return_dict))
+        p.start()
+        timeout = 60 * 2
+        p.join(timeout)
+        if p.is_alive():
+            p.terminate()
+            p.join()
+            timeout_tag = 1
+            print("Code Execution Timeout.")
+        else:
+            result = return_dict.get('result')
+            nb = return_dict.get('nb')
+            if result is not None:
+                print("执行过程中出现错误：", result)
+
+        print("get here")
         # 提取 test cell 的执行输出
         exec_res = []
         for idx in test_cell_indices:
@@ -66,8 +94,15 @@ class Coder:
                     output_text += output.get("data", {}).get("text/plain", "")
                 elif output.output_type == "error":
                     tb = output.get("traceback", [])
-                    if tb:
+                    if tb and timeout_tag == 0:
                         output_text += tb[-1]
+                    elif tb and timeout_tag == 1:
+                        output_text += "Code Execution Timed Out."
+                else:
+                    if timeout_tag == 1:
+                        output_text += "Code Execution Timed Out."
+                    else:
+                        output_text += "Code Unknown Error."
             exec_res.append(output_text.strip())
 
         if verbose:

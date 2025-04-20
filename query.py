@@ -24,7 +24,6 @@ def query_code_master(problem_desc, samples, test_samples=None, counterfactual_t
     coder = Coder()
     debugger = Debugger()
 
-
     good_samples = thinker.understand(problem_desc, samples, model=model)
     additional_samples, notes = thinker.specific_thinking(problem_desc, good_samples, model=model)
     plans = planner.planning(problem_desc, good_samples, additional_samples, notes, k_sample, model=model)
@@ -54,7 +53,6 @@ def query_code_master(problem_desc, samples, test_samples=None, counterfactual_t
         for i in range(len(good_samples)):
             t_res = true_res[i]
             r_res = run_res[i]
-
             unfit_problems.append({"input": good_samples[i]["input"], "output": t_res, "program_output": r_res, "explanation": good_samples[i]["explanation"]})
 
         print("unfit_problems:", unfit_problems)

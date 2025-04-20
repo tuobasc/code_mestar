@@ -64,17 +64,25 @@ def main():
         input_tokens_total = 0
         output_tokens_total = 0
         fitness_list = []
-        for problem in tqdm(data):
+        for i, problem in tqdm(enumerate(data), total=len(data), desc="Running code-master with model {}".format(args.model)):
             problem_desc = problem["problem_description"]
             examples = problem["examples"]
             test_examples = problem["test_examples"] # true test_cases
-            success, input_tokens, output_tokens, fitness = query_code_master(problem_desc=problem_desc, samples=examples, test_samples=test_examples,
+            try:
+                success, input_tokens, output_tokens, fitness = query_code_master(problem_desc=problem_desc, samples=examples, test_samples=test_examples,
                               counterfactual_thinking=args.counterfactual_think,
                               greedy_search_iterations=args.greedy_search_iterations,
                               evolution_iterations=args.evolution_iterations,
                               model=args.model, verbose=args.verbose)
-            pass_count += success
-            fitness_list.append(fitness)
+                pass_count += success
+                fitness_list.append(fitness)
+                input_tokens_total += input_tokens
+                output_tokens_total += output_tokens
+            except Exception as e:
+                print(e)
+                fitness_list.append(0)
+                input_tokens_total += int(input_tokens_total / (i + 1))
+                output_tokens_total += int(output_tokens_total / (i + 1))
         pass_rate = pass_count / len(data)
         avg_input_tokens = input_tokens_total / len(data)
         avg_output_tokens = output_tokens_total / len(data)
@@ -90,15 +98,21 @@ def main():
         output_tokens_total = 0
         pass_count = 0
         fitness_list = []
-        for _, problem in tqdm(enumerate(data), total=len(data), desc="Running greedy method with model {}".format(args.model)):
+        for i, problem in tqdm(enumerate(data), total=len(data), desc="Running greedy method with model {}".format(args.model)):
             problem_desc = problem["problem_description"]
             examples = problem["examples"]
             test_examples = problem["test_examples"]  # true test_cases
-            res, input_tokens, output_tokens, fitness = query_greedy(problem_desc=problem_desc, samples=examples, test_samples=test_examples, max_trys=max_trys, model=args.model)
-            pass_count += res
-            input_tokens_total += input_tokens
-            output_tokens_total += output_tokens
-            fitness_list.append(fitness)
+            try:
+                res, input_tokens, output_tokens, fitness = query_greedy(problem_desc=problem_desc, samples=examples, test_samples=test_examples, max_trys=max_trys, model=args.model)
+                pass_count += res
+                input_tokens_total += input_tokens
+                output_tokens_total += output_tokens
+                fitness_list.append(fitness)
+            except Exception as e:
+                print(e)
+                fitness_list.append(0)
+                input_tokens_total += int(input_tokens_total / (i+1))
+                output_tokens_total += int(output_tokens_total / (i+1))
 
         pass_rate = pass_count / len(data)
         avg_input_tokens = input_tokens_total / len(data)
