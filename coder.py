@@ -81,7 +81,6 @@ class Coder:
             if result is not None:
                 print("执行过程中出现错误：", result)
 
-        print("get here")
         # 提取 test cell 的执行输出
         exec_res = []
         for idx in test_cell_indices:

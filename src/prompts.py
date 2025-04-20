@@ -43,6 +43,27 @@ Your response must follow the following json format:
 ```
 """
 
+planner_evolution_planning_prompt = """You are an expert in algorithms and data structures.
+Given a competitive programming problem and a not working plan from beginner, please give a different plan to solve the problem. 
+You can make a new plan with a different method and strategy, or make a more effective plan.
+## Problem: 
+{problem_desc} 
+## Original Plan:
+{base_plan}
+## Sample Input/Outputs: 
+{samples} 
+
+## Notes: 
+{notes}
+
+Your response must follow the following json format:
+```json
+{{
+    'new_plan': "a detailed new plan to solve the problem",
+}}
+```
+"""
+
 coder_prompt = """You are an expert in algorithms and coding.
 Given a competitive programming problem, please generate Python code to solve the problem.
 
