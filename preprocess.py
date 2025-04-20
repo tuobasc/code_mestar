@@ -11,6 +11,7 @@ def load_dataset(file_path, split_test_ratio=0.95):
     problems = []
     filename = os.path.basename(file_path)
 
+    names = []
     for data in datas:
         if filename == 'HumanEvalET.jsonl':
             problem_description = data.get('prompt', '')
@@ -27,19 +28,47 @@ def load_dataset(file_path, split_test_ratio=0.95):
             splitter = _split_MBPP_test_case
 
         elif filename in ('APPS_selected150.jsonl', 'CodeContest.jsonl'):
+            if data["name"] not in names:
+                names.append(data["name"])
+            else:
+                continue
+
             problem_description = data.get('description', '')
             raw_cases = data.get('sample_io', []) + data.get('test_list', [])
+            if any("\\n" in str(case["output"]) for case in raw_cases):
+                continue
+
             correct_cases = []
-            function_name = data.get('starter_code', '').strip()[4:].split('(')[0]
+            function_name = data.get('starter_code', '')
+            if function_name:
+                function_name = function_name.strip()[4:].split('(')[0]
+            else:
+                function_name = "problem_solution"
             for case in raw_cases:
                 case_dict = dict()
                 if identify(case["input"]):
                     case_dict['input'] = f"{function_name}(" + case['input'] + ")"
                 else:
-                    case_dict['input'] = f"{function_name}(\"" + case['input'] + "\")"
+                    if "\n" in case['input']:
+                        if function_name in ["problem_solution", ""]:
+                            if str(data["name"]) in ["2104", "2199", "2037", "2174"]:
+                                case_dict['input'] = function_name + "(\"" + case["input"] + "\")"
+                            else:
+                                case_dict['input'] = function_name + "(" + str(case['input'].split("\n")) + ")"
+                        elif str(data["name"]) in ["4344", "3856", "3978", "4262", "3155", "1643", "1627", "1642",
+                                                   "1648", "3045", "3741", "1621", "1658", "1665", "3478"]:
+                            case_dict['input'] = function_name + "(" + ", ".join(case['input'].split("\n")) + ")"
+                        else:
+                            case_dict['input'] = function_name + "(\"" + "\",\"".join(case['input'].split("\n")) + "\")"
+                    else:
+                        case_dict['input'] = f"{function_name}(\"" + case['input'] + "\")"
                 case_dict['output'] = str(case['output'])
                 correct_cases.append(case_dict)
             raw_cases = correct_cases
+            print("Name:", data["name"])
+            print("Starter code:", data["starter_code"])
+            print("raw_cases:", raw_cases)
+            print("---------------------")
             ground_truth = None
             splitter = None
 
@@ -55,8 +84,8 @@ def load_dataset(file_path, split_test_ratio=0.95):
             all_examples = raw_cases.copy()
 
         train_examples, test_examples = _split_examples(all_examples, test_size=split_test_ratio)
-        print(train_examples[0])
-        print(test_examples[0])
+        # print(train_examples[0])
+        # print(test_examples[0])
         problems.append({
             "problem_description": problem_description,
             "examples": train_examples,

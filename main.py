@@ -59,6 +59,7 @@ def main():
     else:
         raise RuntimeError
 
+    print("Dataset problems: {}".format(len(data)))
     if args.method == "code-master":
         pass_count = 0
         input_tokens_total = 0
