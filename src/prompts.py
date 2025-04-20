@@ -64,24 +64,26 @@ Your response must follow the following format:
 ```
 """
 
-debugger_prompt = """You are an expert in algorithms and coding.
-Given a competitive programming problem, a plan and corresponding python code have been generated to solve the problem. 
-But the generated code cannot pass sample test cases. Please find the error, write comments to avoid such issues and modify the original plan.
+debugger_debug_prompt = """You are an expert in algorithms and coding.
+Here is a competitive programming problem, along with the plan (an explanation about problem-solving ideas) and the corresponding code. 
+But the generated code cannot pass some test cases. Please find the error, modify the original plan and give the correct code.
 ## Problem: 
 {problem_desc} 
 ## Original Plan:
 {plan}
 ## Corresponding Code:
 {code}
-## Test Samples with Error: 
+## Test Cases: 
 {error_samples}
+
+## Notes: The result validation program will consider both "correct answer" and ["correct answer"] as the correct answer.
 
 Your response must follow the following json format:
 ```json
 {{
     "error": "The errors in the original plan or original code.", 
-    "comments": "Write comments to avoid such errors.", 
     "revised_plan": "Give a correct plan to solve the problem.",
+    "revised_code": "Give the correct code based on the revised plan.",
 }}
 """
 

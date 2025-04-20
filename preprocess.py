@@ -30,7 +30,7 @@ def load_dataset(file_path, split_test_ratio=0.95):
             problem_description = data.get('description', '')
             raw_cases = data.get('sample_io', []) + data.get('test_list', [])
             correct_cases = []
-            function_name = data.get('starter_code', '')
+            function_name = data.get('starter_code', '').strip()[4:].split('(')[0]
             for case in raw_cases:
                 case_dict = dict()
                 if identify(case["input"]):

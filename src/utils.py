@@ -25,6 +25,12 @@ def load_jsonl(file_path):
             data.append(json.loads(line))
     return data
 
+def save_jsonl(data, file_path):
+    with open(file_path, "w", encoding="utf-8") as f:
+        for item in data:
+            json_line = json.dumps(item, ensure_ascii=False)
+            f.write(json_line + "\n")
+
 def parser_json(string):
     start_index = string.find("```json") + 7
     end_index = string.rfind("```")
@@ -53,6 +59,17 @@ def sample_decoder(samples):
             samples_info_list.append(f"Explanation: {sample['explanation']}")
     sample_info = "\n".join(samples_info_list)
     return sample_info
+
+def error_sample_decoder(samples):
+    samples_info_list = []
+    for i, sample in enumerate(samples):
+        samples_info_list.append(f"#### Case{i}")
+        samples_info_list.append(f"Input: {sample['input']}")
+        samples_info_list.append(f"Expected Output: {sample['output']}")
+        if 'explanation' in sample.keys():
+            samples_info_list.append(f"Explanation: {sample['explanation']}")
+        samples_info_list.append(f"Current Output: {sample['program_output']}")
+    return "\n".join(samples_info_list)
 
 def identify(s):
     """

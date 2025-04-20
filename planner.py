@@ -8,7 +8,7 @@ class Planner:
         self.input_tokens_counts = 0
         self.output_tokens_counts = 0
 
-    def planning(self, problem_desc, samples, additional_samples=None, notes="", k_sample=5):
+    def planning(self, problem_desc, samples, additional_samples=None, notes="", k_sample=5, model="gpt-4o-mini"):
         knowledge_base = []
         early_stopping_control = False
         temperature_control = 0
@@ -23,12 +23,12 @@ class Planner:
 
         while not early_stopping_control and trys < k_sample:
             planner_query = planner_prompt.format(problem_desc=problem_desc, samples=samples_info, notes=notes)
-            res, input_tokens, output_tokens = request(planner_query, temperature=temperature_control)
+            res, input_tokens, output_tokens = request(planner_query, temperature=temperature_control, model=model)
             input_tokens_total += input_tokens
             output_tokens_total += output_tokens
             plan = parser_json(res)["plan"]
             confidence_query = planner_confidence_prompt.format(problem_desc=problem_desc, plan=plan, notes=notes)
-            res, input_tokens, output_tokens = request(confidence_query, temperature=temperature_control)
+            res, input_tokens, output_tokens = request(confidence_query, temperature=temperature_control, model=model)
             confidence = parser_json(res)["confidence"]
 
             if confidence == 2:

@@ -33,15 +33,16 @@ def query_greedy(problem_desc, samples, test_samples=None, max_trys=9, model="gp
             # submit
             if test_samples:
                 test_cases_res, exec_res, pass_count = coder.run(code, test_samples)
+                fitness = pass_count / len(test_cases_res)
                 if pass_count == len(test_cases_res):
                     # pass the question
-                    return 1, input_tokens_total, output_tokens_total
+                    return 1, input_tokens_total, output_tokens_total, fitness
                 else:
-                    return 0, input_tokens_total, output_tokens_total # fail to pass
+                    return 0, input_tokens_total, output_tokens_total, fitness # fail to pass
             else:
                 print("No test samples.")
                 print("######## Codes:")
                 print(code)
                 break
 
-    return 0, input_tokens_total, output_tokens_total # fail to pass even examples
+    return 0, input_tokens_total, output_tokens_total, 0 # fail to pass even examples

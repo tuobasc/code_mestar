@@ -8,13 +8,13 @@ class Thinker:
         self.thinking_method = thinking_method
         assert self.thinking_method in ["normal", "counterfactual"], "Unknown thinking method"
 
-    def understand(self, problem_desc, samples):
-        if not problem_desc:
-            return
+    def understand(self, problem_desc, samples, model="gpt-4o-mini"):
+        if not samples:
+            return samples
 
         sample_info = sample_decoder(samples)
         thinker_understand_query = thinker_understand_prompt.format(problem_desc=problem_desc, samples=sample_info)
-        res, input_tokens, output_tokens = request(thinker_understand_query)
+        res, input_tokens, output_tokens = request(thinker_understand_query, model=model)
         thoughts = parser_json(res)
         self.input_tokens_total += input_tokens
         self.output_tokens_total += output_tokens
@@ -28,14 +28,14 @@ class Thinker:
 
         return good_samples
 
-    def specific_thinking(self, problem_desc, samples=None):
+    def specific_thinking(self, problem_desc, samples=None, model="gpt-4o-mini"):
         if samples:
             sample_info = sample_decoder(samples)
         else:
             sample_info = ""
         if self.thinking_method == "normal":
             thinker_thinking_query = thinker_normal_prompt.format(problem_desc=problem_desc, samples=sample_info)
-            res, input_tokens, output_tokens = request(thinker_thinking_query)
+            res, input_tokens, output_tokens = request(thinker_thinking_query, model=model)
             thoughts = parser_json(res)
             notes_list = []
             for thought in thoughts:
@@ -45,7 +45,7 @@ class Thinker:
             return [], "\n".join(notes_list)
         elif self.thinking_method == "counterfactual":
             thinker_thinking_query = thinker_counter_prompt.format(problem_desc=problem_desc, samples=sample_info)
-            res, input_tokens, output_tokens = request(thinker_thinking_query)
+            res, input_tokens, output_tokens = request(thinker_thinking_query, model=model)
             thoughts = parser_json(res)
             notes_list = []
             additional_samples = []

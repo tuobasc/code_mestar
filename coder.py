@@ -16,13 +16,13 @@ class Coder:
         self.input_tokens_counts = 0
         self.output_tokens_counts = 0
 
-    def writing(self, problem_desc, plan, samples, additional_samples=None, notes=""):
+    def writing(self, problem_desc, plan, samples, additional_samples=None, notes="", model="gpt-4o-mini"):
         if additional_samples:
             samples_info = sample_decoder(samples + additional_samples)
         else:
             samples_info = sample_decoder(samples)
         coder_query = coder_prompt.format(problem_desc=problem_desc, plan=plan, samples=samples_info, notes=notes)
-        code, input_tokens, output_tokens = request(coder_query)
+        code, input_tokens, output_tokens = request(coder_query, model=model)
         self.input_tokens_counts += input_tokens
         self.output_tokens_counts += output_tokens
         code = parser_codes(code)
@@ -31,8 +31,8 @@ class Coder:
     def run(self, code, samples, verbose=False):
         test_cases_main = [sample["input"] for sample in samples]
         test_cases_res = [sample["output"] for sample in samples]
-        print("test_cases_main", test_cases_main)
-        print("test_cases_res", test_cases_res)
+        # print("test_cases_main", test_cases_main)
+        # print("test_cases_res", test_cases_res)
 
         nb = nbformat.v4.new_notebook()
         code = "from typing import List, Tuple\n" + code
@@ -77,6 +77,8 @@ class Coder:
         pass_count = 0
         for t_res, r_res in zip(test_cases_res, exec_res):
             if t_res == r_res:
+                pass_count += 1
+            elif t_res == '[' + r_res + ']':
                 pass_count += 1
             else:
                 try:
