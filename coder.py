@@ -4,9 +4,9 @@ from nbconvert.preprocessors import ExecutePreprocessor
 import ast
 import traceback
 import multiprocessing
-import nbformat
 import asyncio
 import sys
+import gc
 
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -42,6 +42,7 @@ class Coder:
         return code
 
     def run(self, code, samples, verbose=False):
+        import nbformat
         test_cases_main = [sample["input"] for sample in samples]
         test_cases_res = [sample["output"] for sample in samples]
         # print("test_cases_main", test_cases_main)
@@ -121,6 +122,7 @@ class Coder:
                 except Exception as e:
                     pass
 
+        gc.collect()
         return test_cases_res, exec_res, pass_count
 
     def robust_run(self, code: str, samples: list[dict], timeout_sec: float = 10.0, verbose=False):
