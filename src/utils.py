@@ -94,3 +94,58 @@ def identify(s):
     # 解析为其它 Python 类型（比如 dict、tuple、str 字面量等），
     # 我们均视作普通字符串
     return False
+
+
+def get_tsp_length(sequence_file_path="tmp_result.json"):
+    import math
+    # 读取节点坐标数据
+    path_list = find_tsp_files("data/tsplib-master")
+    with open(sequence_file_path, "r") as file:
+        sequence_lists = json.load(file)
+
+    res = []
+    for name in path_list:
+        print(name)
+        path = "data/tsplib-master/" + name
+        with open(path, "r") as file:
+            node_data = json.load(file)
+
+        # 读取节点顺序
+        sequence_list = sequence_lists[name.split(".")[0]]
+
+        # 初始化路径长度
+        total_length = 0.0
+
+        # 遍历节点顺序，计算路径长度
+        for i in range(len(sequence_list)):
+            # 当前节点
+            current_node = sequence_list[i]
+            # 下一个节点（如果是最后一个节点，则回到第一个节点）
+            next_node = sequence_list[(i + 1) % len(sequence_list)]
+
+            # 获取当前节点和下一个节点的坐标
+            x1, y1 = node_data[current_node]
+            x2, y2 = node_data[next_node]
+
+            # 计算欧式距离并累加到总长度
+            distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+            total_length += distance
+
+        with open("data/tsplib-master/solutions.json", "r") as f:
+            solutions = json.load(f)
+
+        baseline_solution = solutions[name.split(".")[0]]
+        # print("baseline_solution: ", baseline_solution)
+        # print("total_length: ", total_length)
+        res.append((baseline_solution - total_length) / baseline_solution)
+
+    return sum(res) / len(res)
+
+def find_tsp_files(directory):
+    import os
+    file_list = []
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if "json" in file and "solution" not in file:
+                file_list.append(file)
+    return file_list

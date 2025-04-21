@@ -52,7 +52,7 @@ def load_dataset(file_path, split_test_ratio=0.95):
                     if "\n" in case['input']:
                         if function_name in ["problem_solution", ""]:
                             if str(data["name"]) in ["2104", "2199", "2037", "2174"]:
-                                case_dict['input'] = function_name + "(\"" + case["input"] + "\")"
+                                case_dict['input'] = function_name + "(\"\"\"" + case["input"] + "\"\"\")"
                             else:
                                 case_dict['input'] = function_name + "(" + str(case['input'].split("\n")) + ")"
                         elif str(data["name"]) in ["4344", "3856", "3978", "4262", "3155", "1643", "1627", "1642",
@@ -61,7 +61,10 @@ def load_dataset(file_path, split_test_ratio=0.95):
                         else:
                             case_dict['input'] = function_name + "(\"" + "\",\"".join(case['input'].split("\n")) + "\")"
                     else:
-                        case_dict['input'] = f"{function_name}(\"" + case['input'] + "\")"
+                        if str(data["name"]) in ["4335"]:
+                            case_dict['input'] = f"{function_name}(" + case['input'] + ")"
+                        else:
+                            case_dict['input'] = f"{function_name}(\"" + case['input'] + "\")"
                 case_dict['output'] = str(case['output'])
                 correct_cases.append(case_dict)
             raw_cases = correct_cases

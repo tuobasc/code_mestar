@@ -1,5 +1,5 @@
 from src.prompts import coder_prompt
-from src.utils import request, parser_codes, sample_decoder
+from src.utils import request, parser_codes, sample_decoder, get_tsp_length
 from nbconvert.preprocessors import ExecutePreprocessor
 import ast
 import traceback
@@ -209,3 +209,19 @@ class Coder:
                           "|", "PASS" if passed else "FAIL")
 
         return results
+
+    def fast_tsp_run(self, code):
+        import nbformat
+        nb = nbformat.v4.new_notebook()
+        code_cell_function = nbformat.v4.new_code_cell(code)
+        nb.cells.append(code_cell_function)
+        ep = ExecutePreprocessor(kernel_name="python3", allow_errors=True)
+        ep.preprocess(nb, {})
+
+        # try:
+        #     fitness = get_tsp_length()
+        # except Exception as e:
+        #     print(e)
+        #     fitness = 0
+        fitness = get_tsp_length()
+        return fitness

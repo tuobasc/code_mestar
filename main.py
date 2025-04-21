@@ -43,7 +43,7 @@ def main():
                 meta_data = dict()
                 meta_data["problem_description"] = problem["problem_description"]
                 saved_samples_length = int((1 - args.split_test_ratio) * len(problem["instances"])) if int((1 - args.split_test_ratio) * len(problem["instances"])) else 1
-                meta_data["example"] = problem["instances"][:saved_samples_length]
+                meta_data["examples"] = problem["instances"][:saved_samples_length]
                 meta_data["test_examples"] = problem["instances"][saved_samples_length:]
                 data.append(meta_data)
     elif "APP" in args.dataset_name:
@@ -59,6 +59,7 @@ def main():
     else:
         raise RuntimeError
 
+    data = [data[-1]]
     print("Dataset problems: {}".format(len(data)))
     if args.method == "code-master":
         pass_count = 0
@@ -69,21 +70,27 @@ def main():
             problem_desc = problem["problem_description"]
             examples = problem["examples"]
             test_examples = problem["test_examples"] # true test_cases
-            try:
-                success, input_tokens, output_tokens, fitness = query_code_master(problem_desc=problem_desc, samples=examples, test_samples=test_examples,
-                              counterfactual_thinking=args.counterfactual_think,
-                              greedy_search_iterations=args.greedy_search_iterations,
-                              evolution_iterations=args.evolution_iterations,
-                              model=args.model, verbose=args.verbose)
-                pass_count += success
-                fitness_list.append(fitness)
-                input_tokens_total += input_tokens
-                output_tokens_total += output_tokens
-            except Exception as e:
-                print(e)
-                fitness_list.append(0)
-                input_tokens_total += int(input_tokens_total / (i + 1))
-                output_tokens_total += int(output_tokens_total / (i + 1))
+            rerun = True
+            for j in range(4):
+                if rerun:
+                    print("rerun:",  rerun)
+                    try:
+                        success, input_tokens, output_tokens, fitness = query_code_master(problem_desc=problem_desc, samples=examples, test_samples=test_examples,
+                                      counterfactual_thinking=args.counterfactual_think,
+                                      greedy_search_iterations=args.greedy_search_iterations,
+                                      evolution_iterations=args.evolution_iterations,
+                                      model=args.model, verbose=args.verbose)
+                        rerun = False
+                        pass_count += success
+                        fitness_list.append(fitness)
+                        input_tokens_total += input_tokens
+                        output_tokens_total += output_tokens
+                    except Exception as e:
+                        print(e)
+                if j == 3 and rerun:
+                    fitness_list.append(0)
+                    input_tokens_total += int(input_tokens_total / (i + 1))
+                    output_tokens_total += int(output_tokens_total / (i + 1))
         pass_rate = pass_count / len(data)
         avg_input_tokens = input_tokens_total / len(data)
         avg_output_tokens = output_tokens_total / len(data)
@@ -103,17 +110,21 @@ def main():
             problem_desc = problem["problem_description"]
             examples = problem["examples"]
             test_examples = problem["test_examples"]  # true test_cases
-            try:
-                res, input_tokens, output_tokens, fitness = query_greedy(problem_desc=problem_desc, samples=examples, test_samples=test_examples, max_trys=max_trys, model=args.model)
-                pass_count += res
-                input_tokens_total += input_tokens
-                output_tokens_total += output_tokens
-                fitness_list.append(fitness)
-            except Exception as e:
-                print(e)
-                fitness_list.append(0)
-                input_tokens_total += int(input_tokens_total / (i+1))
-                output_tokens_total += int(output_tokens_total / (i+1))
+            rerun = True
+            for j in range(4):
+                if rerun:
+                    try:
+                        res, input_tokens, output_tokens, fitness = query_greedy(problem_desc=problem_desc, samples=examples, test_samples=test_examples, max_trys=max_trys, model=args.model)
+                        pass_count += res
+                        input_tokens_total += input_tokens
+                        output_tokens_total += output_tokens
+                        fitness_list.append(fitness)
+                    except Exception as e:
+                        print(e)
+                if j == 3 and rerun:
+                    fitness_list.append(0)
+                    input_tokens_total += int(input_tokens_total / (i+1))
+                    output_tokens_total += int(output_tokens_total / (i+1))
 
         pass_rate = pass_count / len(data)
         avg_input_tokens = input_tokens_total / len(data)

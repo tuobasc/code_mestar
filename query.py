@@ -24,6 +24,7 @@ def query_code_master(problem_desc, samples, test_samples=None, counterfactual_t
     coder = Coder()
     debugger = Debugger()
 
+
     good_samples = thinker.understand(problem_desc, samples, model=model)
     additional_samples, notes = thinker.specific_thinking(problem_desc, good_samples, model=model)
     base_plans = []
@@ -89,6 +90,7 @@ def query_code_master(problem_desc, samples, test_samples=None, counterfactual_t
     total_tokens_in = planner.input_tokens_counts + coder.input_tokens_counts + thinker.input_tokens_total + debugger.input_tokens_total
     total_tokens_out = planner.output_tokens_counts + coder.output_tokens_counts + thinker.output_tokens_total + debugger.output_tokens_total
     return 0, total_tokens_in, total_tokens_out, 0
+
 
 
 if __name__ == '__main__':
