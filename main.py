@@ -61,7 +61,6 @@ def main():
     else:
         raise RuntimeError
 
-    data = [data[-1]]
     print("Dataset problems: {}".format(len(data)))
     if args.method == "code-master":
         pass_count = 0

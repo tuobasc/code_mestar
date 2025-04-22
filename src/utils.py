@@ -55,7 +55,7 @@ def sample_decoder(samples):
     samples_info_list = []
     for i, sample in enumerate(samples):
         samples_info_list.append(f"#### Case{i}")
-        samples_info_list.append(f"assert {sample["input"]} == {sample['output']}")
+        samples_info_list.append(f"assert {sample['input']} == {sample['output']}")
         if 'explanation' in sample.keys():
             samples_info_list.append(f"Explanation: {sample['explanation']}")
     sample_info = "\n".join(samples_info_list)

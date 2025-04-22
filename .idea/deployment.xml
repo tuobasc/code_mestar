@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="zcaoas@superpod.ust.hk:22 key (2)" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
       <paths name="nifei@211.81.55.161:7002 password">
         <serverdata>
@@ -23,6 +23,21 @@
           </mappings>
         </serverdata>
       </paths>
+      <paths name="zcaoas@superpod.ust.hk:22 key">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/tmp/pycharm_project_468" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="zcaoas@superpod.ust.hk:22 key (2)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/zcaoas/code_master" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
     </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>
