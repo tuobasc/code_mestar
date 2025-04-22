@@ -1,7 +1,7 @@
 import statistics
 
 # 示例列表
-a = [0.46, 9.90]
+a = [9.35, 9.33, 10.44]
 
 # 计算均值
 mean = statistics.mean(a)

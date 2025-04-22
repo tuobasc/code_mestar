@@ -54,7 +54,7 @@ def query_greedy(problem_desc, samples, test_samples=None, max_trys=9, model="gp
     input_tokens_total = 0
     output_tokens_total = 0
     for _ in range(max_trys):
-        res, input_tokens, output_tokens = request(query, model=model)
+        res, input_tokens, output_tokens = request(query, model=model, temperature=0.5)
         input_tokens_total += input_tokens
         output_tokens_total += output_tokens
         code = parser_codes(res)
