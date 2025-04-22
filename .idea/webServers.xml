@@ -9,6 +9,13 @@
           </advancedOptions>
         </fileTransfer>
       </webServer>
+      <webServer id="71464454-a8be-4a89-9d59-c29faa48c402" name="zcaoas@song7.cse.ust.hk">
+        <fileTransfer accessType="SFTP" host="songcpu7.cse.ust.hk" port="22" sshConfigId="cb993880-1f27-469e-ad94-dcac946ea955" sshConfig="zcaoas@songcpu7.cse.ust.hk:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
     </option>
   </component>
 </project>

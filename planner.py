@@ -19,6 +19,8 @@ class Planner:
 
         if samples and additional_samples:
             samples_info = sample_decoder(samples + additional_samples)
+        elif samples:
+            samples_info = sample_decoder(samples)
         else:
             samples_info = ""
 

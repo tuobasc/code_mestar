@@ -88,7 +88,7 @@ def main():
                         input_tokens_total += input_tokens
                         output_tokens_total += output_tokens
                     except Exception as e:
-                        print(e)
+                        print("code-master.query error:", e)
                 if j == 3 and rerun:
                     fitness_list.append(0)
                     input_tokens_total += int(input_tokens_total / (i + 1))
@@ -160,7 +160,7 @@ def main():
                         input_tokens_total += input_tokens
                         output_tokens_total += output_tokens
                     except Exception as e:
-                        print(e)
+                        print("mapcoder.query error:", e)
                 if j == 3 and rerun:
                     fitness_list.append(0)
                     input_tokens_total += int(input_tokens_total / (i+1))

@@ -26,7 +26,7 @@ class Debugger:
                     rerun = False
                     return evolved["revised_plan"], evolved["revised_code"]
                 except Exception as e:
-                    print(e)
+                    print("debugger.debug error:", e)
 
         return "", ""
 

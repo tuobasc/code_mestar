@@ -33,18 +33,26 @@ def query_code_master(problem_desc, samples=None, test_samples=None, counterfact
     base_score = 0
     base_code = ""
     for i in range(evolution_iterations):
-        print(base_plan)
+        # print(base_plan)
+        if i > 0:
+            if verbose:
+                print("Logs: Resetting the understanding.")
+            good_samples = samples
+            additional_samples = None
+            notes = ""
         plans = planner.planning(problem_desc, base_plan, good_samples, additional_samples, notes, k_sample, model=model)
         planner.plans = sorted(plans, key=lambda plan: plan["confidence"], reverse=True)
-        planner.print_plans()
-        print("Logs: Try to solve the problem...")
+        if verbose:
+            planner.print_plans()
+            print("Logs: Try to solve the problem...")
         code = coder.writing(problem_desc, planner.plans[0]["plan"], good_samples, additional_samples, notes, model=model)
-        print("Logs: Code\n", code)
+        if verbose:
+            print("Logs: Code\n", code)
         if optimization:
             try:
                 fitness = coder.fast_tsp_run(code)
             except Exception as e:
-                print(e)
+                print("fast_tsp_run error: ", e)
                 fitness = 0
             print(f"evo{i}, base, fitness: {fitness}")
             if fitness > base_score or not base_plan:
@@ -52,14 +60,14 @@ def query_code_master(problem_desc, samples=None, test_samples=None, counterfact
                 base_plan = planner.plans[0]["plan"]
                 base_code = code
             for j in range(greedy_search_iterations):
-                revised_plan, revised_code = debugger.debug(problem_desc, base_plan, base_code, temperature=0.2)
+                revised_plan, revised_code = debugger.debug(problem_desc=problem_desc, plan=base_plan, code=base_code, temperature=0.2, model=model)
                 print(revised_code)
                 if not revised_code:
                     continue
                 try:
                     revised_fitness = coder.fast_tsp_run(revised_code)
                 except Exception as e:
-                    print(e)
+                    print("fast_tsp_run error: ", e)
                     revised_fitness = 0
                 print(f"evo{i}, search{j}, fitness: {revised_fitness}")
                 if revised_fitness > base_score:
@@ -89,22 +97,22 @@ def query_code_master(problem_desc, samples=None, test_samples=None, counterfact
                 for j in range(len(good_samples)):
                     t_res = true_res[j]
                     r_res = run_res[j]
-                    unfit_problems.append({"input": good_samples[j]["input"], "output": t_res, "program_output": r_res, "explanation": good_samples[j]["explanation"]})
+                    unfit_problems.append({"input": good_samples[j]["input"], "output": t_res, "program_output": r_res})
 
                 if unfitness < base_score or not base_plan:
                     base_score = unfitness
                     base_plan = planner.plans[0]["plan"]
                     base_code = code
-
-                print("unfit_problems:", unfit_problems)
+                if verbose:
+                    print("unfit_problems:", unfit_problems)
                 evo_plan = planner.plans[0]["plan"] # set the plan to be evolved
                 local_plans.append({"plan": evo_plan, "unfitness": unfitness})
                 evo_code = code # set the code to be evolved
                 for j in range(greedy_search_iterations):
-                    print("try to debugging....")
-                    evo_plan, evo_code = debugger.debug(problem_desc, evo_plan, evo_code, unfit_problems, model)
-                    print(f"evo{j}_code:\n", evo_code)
-                    if not evo_code:
+                    # print("try to debugging....")
+                    evo_plan, evo_code = debugger.debug(problem_desc=problem_desc, plan=evo_plan, code=evo_code, error_samples=unfit_problems, model=model)
+                    print(f"evo{i}_search{j}_code:\n", evo_code)
+                    if len(evo_code) == 0:
                         continue
                     true_res, run_res, pass_count = coder.run(evo_code, good_samples, verbose=verbose)
 

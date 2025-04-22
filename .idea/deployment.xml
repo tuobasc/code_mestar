@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="zcaoas@superpod.ust.hk:22 key (2)" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="zcaoas@songcpu7.cse.ust.hk:22 password" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
       <paths name="nifei@211.81.55.161:7002 password">
         <serverdata>
@@ -13,6 +13,20 @@
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="zcaoas@song7.cse.ust.hk">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/zcaoas/cm" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="zcaoas@songcpu7.cse.ust.hk:22 password">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/zcaoas/cm" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>

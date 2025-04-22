@@ -3,6 +3,7 @@
   <component name="SshConfigs">
     <configs>
       <sshConfig host="superpod.ust.hk" id="abd1bc80-465e-472e-b9c5-40c8e0770228" keyPath="C:\Users\DSB\.ssh\id_rsa_ust" port="22" nameFormat="DESCRIPTIVE" username="zcaoas" useOpenSSHConfig="true" />
+      <sshConfig authType="PASSWORD" host="songcpu7.cse.ust.hk" id="cb993880-1f27-469e-ad94-dcac946ea955" port="22" nameFormat="DESCRIPTIVE" username="zcaoas" useOpenSSHConfig="true" />
     </configs>
   </component>
 </project>

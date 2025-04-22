@@ -68,10 +68,10 @@ def load_dataset(file_path, split_test_ratio=0.95):
                 case_dict['output'] = str(case['output'])
                 correct_cases.append(case_dict)
             raw_cases = correct_cases
-            print("Name:", data["name"])
-            print("Starter code:", data["starter_code"])
-            print("raw_cases:", raw_cases)
-            print("---------------------")
+            # print("Name:", data["name"])
+            # print("Starter code:", data["starter_code"])
+            # print("raw_cases:", raw_cases)
+            # print("---------------------")
             ground_truth = None
             splitter = None
 
