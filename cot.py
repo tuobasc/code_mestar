@@ -95,7 +95,11 @@ def tsp_query_cot(dataset_name_list, max_trys=9, model="gpt-4o-mini"):
         res, input_tokens, output_tokens = request(cot_tsp_query, temperature=0.5, model=model)
         code = parser_codes(res)
         print(code)
-        fitness = coder.fast_tsp_run(code)
+        try:
+            fitness = coder.fast_tsp_run(code)
+        except Exception as e:
+            print(e)
+            fitness = 0
         print("fitness: ", fitness)
         fitness_list.append(fitness)
         # exit(0)

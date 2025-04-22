@@ -50,7 +50,7 @@ You can make a new plan with a different method and strategy, or make a more eff
 {problem_desc} 
 ## Original Plan:
 {base_plan}
-## Sample Input/Outputs: 
+## Sample Input/Outputs (if any): 
 {samples} 
 
 ## Notes: 
@@ -71,13 +71,13 @@ Given a competitive programming problem, please generate Python code to solve th
 {problem_desc} 
 ## Plan:
 {plan}
-## Sample Input/Outputs: 
-We will test your solution through the following function call.
+## Sample Input/Outputs (if any): 
+We will test your solution through the following function call (if any).
 {samples} 
 ## Notes:
 {notes}
 Please follow the plan step by step and realize the code. No need to include test code.
-Please make sure your code complies with the function call method.
+Please make sure your code complies with the function call method (if any).
 
 Your response must follow the following format:
 ```python
@@ -105,6 +105,24 @@ Your response must follow the following json format:
     "error": "The errors in the original plan or original code.", 
     "revised_plan": "Give a correct plan to solve the problem.",
     "revised_code": "Give the correct code based on the revised plan.",
+}}
+"""
+
+debugger_optimization_prompt = """You are an expert in algorithms and coding.
+Here is a competitive programming problem, along with the plan (an explanation about problem-solving ideas) and the corresponding code. 
+But the generated method are not good enough. Please modify the original plan and give the corresponding code.
+## Problem: 
+{problem_desc} 
+## Original Plan:
+{plan}
+## Corresponding Code:
+{code}
+
+```json
+{{
+    "ideas": "The ideas to improve the original plan", 
+    "revised_plan": "Give a better plan to solve the problem.",
+    "revised_code": "Give the better code based on the revised plan.",
 }}
 """
 

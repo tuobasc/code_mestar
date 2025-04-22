@@ -14,8 +14,8 @@ def submit(coder, code, test_samples, verbose):
         print(f"Logs: Fail to pass test cases! Fitness = {pass_count_test / len(true_res_test)}")
         return 0, fitness
 
-def query_code_master(problem_desc, samples, test_samples=None, counterfactual_thinking=False, k_sample=3,
-                      greedy_search_iterations=3, evolution_iterations=3, model="gpt-4o-mini", verbose=True):
+def query_code_master(problem_desc, samples=None, test_samples=None, counterfactual_thinking=False, k_sample=3,
+                      greedy_search_iterations=3, evolution_iterations=3, model="gpt-4o-mini", optimization=False, verbose=True):
     if counterfactual_thinking:
         thinker = Thinker(thinking_method="counterfactual")
     else:
@@ -24,8 +24,10 @@ def query_code_master(problem_desc, samples, test_samples=None, counterfactual_t
     coder = Coder()
     debugger = Debugger()
 
-
-    good_samples = thinker.understand(problem_desc, samples, model=model)
+    if samples:
+        good_samples = thinker.understand(problem_desc, samples, model=model)
+    else:
+        good_samples = None
     additional_samples, notes = thinker.specific_thinking(problem_desc, good_samples, model=model)
     base_plans = []
     for i in range(evolution_iterations):
@@ -35,62 +37,82 @@ def query_code_master(problem_desc, samples, test_samples=None, counterfactual_t
         print("Logs: Try to solve the problem...")
         code = coder.writing(problem_desc, planner.plans[0]["plan"], good_samples, additional_samples, notes, model=model)
         print("Logs: Code\n", code)
-        true_res, run_res, pass_count = coder.run(code, good_samples, verbose=verbose)
-        if pass_count == len(true_res):
-            """SUBMIT"""
-            print("Logs: Pass through sample cases!")
-            total_tokens_in = planner.input_tokens_counts + coder.input_tokens_counts + thinker.input_tokens_total + debugger.input_tokens_total
-            total_tokens_out = planner.output_tokens_counts + coder.output_tokens_counts + thinker.output_tokens_total + debugger.output_tokens_total
-            if test_samples:
-                success, fitness = submit(coder, code, test_samples, verbose=verbose)
-                return success, total_tokens_in, total_tokens_out, fitness
-            else:
-                print("Warning: No test samples!")
-                return 1, total_tokens_in, total_tokens_out, 1
+        if optimization:
+            try:
+                fitness = coder.fast_tsp_run(code)
+            except Exception as e:
+                print(e)
+                fitness = 0
+            print(f"evo{i}, base, fitness: {fitness}")
+            base_plans.append({"plan": planner.plans[0]["plan"], "code": code, "fitness": fitness})
+            for j in range(greedy_search_iterations):
+                print(base_plans)
+                revised_plan, revised_code = debugger.debug(problem_desc, base_plans[0]["plan"], base_plans[0]["code"])
+                try:
+                    revised_fitness = coder.fast_tsp_run(code)
+                except Exception as e:
+                    print(e)
+                    revised_fitness = 0
+                print(f"evo{i}, search{j}, fitness: {revised_fitness}")
+                base_plans.append({"plan": revised_plan, "code": revised_code, "fitness": revised_fitness})
+                base_plans = base_plans.sort(key=lambda plan: plan["fitness"], reverse=True)
         else:
-            local_plans = []
-            unfitness = 1 - pass_count / len(true_res) # minimize unfitness
-            print("Logs: unfitness", unfitness)
-            """DEBUG with greedy search"""
-            print("Logs: Fail to pass the sample cases! Enter DEBUG mode...")
-            unfit_problems = []
-            for i in range(len(good_samples)):
-                t_res = true_res[i]
-                r_res = run_res[i]
-                unfit_problems.append({"input": good_samples[i]["input"], "output": t_res, "program_output": r_res, "explanation": good_samples[i]["explanation"]})
-
-            print("unfit_problems:", unfit_problems)
-            evo_plan = planner.plans[0]["plan"] # set the plan to be evolved
-            local_plans.append({"plan": evo_plan, "unfitness": unfitness})
-            evo_code = code # set the code to be evolved
-            for i in range(greedy_search_iterations - 1):
-                evo_plan, evo_code = debugger.debug(problem_desc, evo_plan, evo_code, unfit_problems, model)
-                if verbose:
-                    print(f"evo{i}_code:\n", evo_code)
-                true_res, run_res, pass_count = coder.run(evo_code, good_samples, verbose=verbose)
-
-                if pass_count == len(true_res):
-                    """SUBMIT"""
-                    print("Logs: Pass through sample cases!")
-                    total_tokens_in = planner.input_tokens_counts + coder.input_tokens_counts + thinker.input_tokens_total + debugger.input_tokens_total
-                    total_tokens_out = planner.output_tokens_counts + coder.output_tokens_counts + thinker.output_tokens_total + debugger.output_tokens_total
-                    if test_samples:
-                        success, fitness = submit(coder, evo_code, test_samples, verbose=verbose)
-                        return success, total_tokens_in, total_tokens_out, fitness
-                    else:
-                        print("Warning: No test samples!")
-                        return 1, total_tokens_in, total_tokens_out
+            true_res, run_res, pass_count = coder.run(code, good_samples, verbose=verbose)
+            if pass_count == len(true_res):
+                """SUBMIT"""
+                print("Logs: Pass through sample cases!")
+                total_tokens_in = planner.input_tokens_counts + coder.input_tokens_counts + thinker.input_tokens_total + debugger.input_tokens_total
+                total_tokens_out = planner.output_tokens_counts + coder.output_tokens_counts + thinker.output_tokens_total + debugger.output_tokens_total
+                if test_samples:
+                    success, fitness = submit(coder, code, test_samples, verbose=verbose)
+                    return success, total_tokens_in, total_tokens_out, fitness
                 else:
-                    unfitness = 1 - pass_count / len(true_res)
-                    local_plans.append({"plan": evo_plan, "unfitness": unfitness})
-            # If still fail, enter evolution, update base plan
-            local_plans = sorted(local_plans, key=lambda plan: plan["unfitness"])
-            base_plans.append(local_plans[0])
+                    print("Warning: No test samples!")
+                    return 1, total_tokens_in, total_tokens_out, 1
+            else:
+                local_plans = []
+                unfitness = 1 - pass_count / len(true_res) # minimize unfitness
+                print("Logs: unfitness", unfitness)
+                """DEBUG with greedy search"""
+                print("Logs: Fail to pass the sample cases! Enter DEBUG mode...")
+                unfit_problems = []
+                for j in range(len(good_samples)):
+                    t_res = true_res[j]
+                    r_res = run_res[j]
+                    unfit_problems.append({"input": good_samples[j]["input"], "output": t_res, "program_output": r_res, "explanation": good_samples[j]["explanation"]})
 
+                print("unfit_problems:", unfit_problems)
+                evo_plan = planner.plans[0]["plan"] # set the plan to be evolved
+                local_plans.append({"plan": evo_plan, "unfitness": unfitness})
+                evo_code = code # set the code to be evolved
+                for j in range(greedy_search_iterations):
+                    evo_plan, evo_code = debugger.debug(problem_desc, evo_plan, evo_code, unfit_problems, model)
+                    if verbose:
+                        print(f"evo{j}_code:\n", evo_code)
+                    true_res, run_res, pass_count = coder.run(evo_code, good_samples, verbose=verbose)
+
+                    if pass_count == len(true_res):
+                        """SUBMIT"""
+                        print("Logs: Pass through sample cases!")
+                        total_tokens_in = planner.input_tokens_counts + coder.input_tokens_counts + thinker.input_tokens_total + debugger.input_tokens_total
+                        total_tokens_out = planner.output_tokens_counts + coder.output_tokens_counts + thinker.output_tokens_total + debugger.output_tokens_total
+                        if test_samples:
+                            success, fitness = submit(coder, evo_code, test_samples, verbose=verbose)
+                            return success, total_tokens_in, total_tokens_out, fitness
+                        else:
+                            print("Warning: No test samples!")
+                            return 1, total_tokens_in, total_tokens_out
+                    else:
+                        unfitness = 1 - pass_count / len(true_res)
+                        local_plans.append({"plan": evo_plan, "unfitness": unfitness})
+                # If still fail, enter evolution, update base plan
+                local_plans = sorted(local_plans, key=lambda plan: plan["unfitness"])
+                base_plans.append(local_plans[0])
+
+    print(base_plans)
     total_tokens_in = planner.input_tokens_counts + coder.input_tokens_counts + thinker.input_tokens_total + debugger.input_tokens_total
     total_tokens_out = planner.output_tokens_counts + coder.output_tokens_counts + thinker.output_tokens_total + debugger.output_tokens_total
     return 0, total_tokens_in, total_tokens_out, 0
-
 
 
 if __name__ == '__main__':

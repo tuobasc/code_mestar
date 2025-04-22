@@ -8,7 +8,7 @@ class Planner:
         self.input_tokens_counts = 0
         self.output_tokens_counts = 0
 
-    def planning(self, problem_desc, base_plans, samples, additional_samples=None, notes="", k_sample=5, model="gpt-4o-mini", warm_up_degree=0.2):
+    def planning(self, problem_desc, base_plans, samples=None, additional_samples=None, notes="", k_sample=5, model="gpt-4o-mini", warm_up_degree=0.2):
         knowledge_base = []
         early_stopping_control = False
         temperature_control = 0
@@ -16,10 +16,11 @@ class Planner:
         output_tokens_total = 0
         trys = 0
 
-        if additional_samples:
+        if samples and additional_samples:
             samples_info = sample_decoder(samples + additional_samples)
         else:
-            samples_info = sample_decoder(samples)
+            samples_info = ""
+
 
         while not early_stopping_control and trys < k_sample:
             if len(base_plans) > 0:

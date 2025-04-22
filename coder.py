@@ -29,11 +29,13 @@ class Coder:
         self.input_tokens_counts = 0
         self.output_tokens_counts = 0
 
-    def writing(self, problem_desc, plan, samples, additional_samples=None, notes="", model="gpt-4o-mini"):
-        if additional_samples:
+    def writing(self, problem_desc, plan, samples=None, additional_samples=None, notes="", model="gpt-4o-mini"):
+        if samples and additional_samples:
             samples_info = sample_decoder(samples + additional_samples)
-        else:
+        elif samples:
             samples_info = sample_decoder(samples)
+        else:
+            samples_info = ""
         coder_query = coder_prompt.format(problem_desc=problem_desc, plan=plan, samples=samples_info, notes=notes)
         code, input_tokens, output_tokens = request(coder_query, model=model)
         self.input_tokens_counts += input_tokens

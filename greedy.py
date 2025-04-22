@@ -73,7 +73,7 @@ def query_greedy(problem_desc, samples, test_samples=None, max_trys=9, model="gp
                 print("No test samples.")
                 print("######## Codes:")
                 print(code)
-                break
+                return 1, input_tokens_total, output_tokens_total, 1
 
     return 0, input_tokens_total, output_tokens_total, 0 # fail to pass even examples
 
@@ -87,7 +87,11 @@ def tsp_query_greedy(dataset_name_list, max_trys=9, model="gpt-4o-mini"):
         res, input_tokens, output_tokens = request(greedy_tsp_query, temperature=0.5, model=model)
         code = parser_codes(res)
         print(code)
-        fitness = coder.fast_tsp_run(code)
+        try:
+            fitness = coder.fast_tsp_run(code)
+        except Exception as e:
+            print(e)
+            fitness = 0
         print("fitness: ", fitness)
         fitness_list.append(fitness)
         # exit(0)
