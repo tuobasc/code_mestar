@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="c3f3ecb0-89f9-47a0-9350-e59d98579c67" name="zcaoas@superpod.ust.hk">
+        <fileTransfer accessType="SFTP" host="superpod.ust.hk" port="22" sshConfigId="abd1bc80-465e-472e-b9c5-40c8e0770228" sshConfig="zcaoas@superpod.ust.hk:22 key" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

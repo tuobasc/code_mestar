@@ -48,6 +48,8 @@ def main():
         print("Best Fitness:", fitness)
     elif args.method == "code-master":
         query_code_master(problem_desc, model=args.model, optimization=True, verbose=True)
+    elif args.method == "mapcoder":
+        pass
 
 if __name__ == '__main__':
     main()

@@ -185,3 +185,115 @@ Your response must follow the following json format:
     }},
 ]
 """
+
+mapcoder_retrieval_prompt = """
+Given a problem, provide relevant problems then identify the algorithm behind it and also explain the tutorial of the algorithm. 
+# Problem:
+{problem_desc}
+# Exemplars:
+Recall k relevant and distinct problems (different from problem mentioned above). For each problem, 
+1. describe it
+2. generate python code step by step to solve that problem
+3. finally generate a planning to solve that problem
+# Algorithm:
+----------------
+Important:
+Your response must follow the following xml format:
+<root>
+    <problem>
+        # Recall k relevant and distinct problems (different from problem mentioned above). Write each problem in the following format.
+        <description> # Describe the problem. </description>
+        <code> # Let's think step by step to solve this problem. </code>
+        <planning> # Planning to solve this problem. </planning>
+    </problem>
+    # similarly add more problems here...
+    <algorithm>
+        # Identify the algorithm (Brute-force, Dynamic Programming, Divide-and-conquer, Greedy, Backtracking, Recursive, Binary search, 
+        and so on) that needs to be used to solve the original problem.
+        # Write a useful tutorial about the above mentioned algorithms. Provide a high level generic tutorial for solving this types 
+        of problem. Do not generate code.
+    </algorithm>
+</root>
+"""
+
+mapcoder_planning_prompt = """
+Given a competitive programming problem, generate a concrete planning to solve the problem.
+## Problem: {description}
+## Planning: {plans}
+## Relevant Algorithm to solve the next problem:
+{algorithm}
+
+# Problem to be solved: 
+{problem_desc}
+# Sample Input/Outputs: 
+{examples}
+
+----------------
+Important: You should give only the planning to solve the problem. Do not add extra explanation or words.
+
+Your response must follow the following json format:
+```json
+{{
+    'plan': "a detailed new plan to solve the problem",
+}}
+```
+"""
+
+mapcoder_confidence_generation_prompt = """
+Given a competitive programming problem and a plan to solve the problem tell whether the plan is correct to solve this problem.
+
+# Problem: {problem_desc}
+# Planning: {plan}
+
+----------------
+Important: Your response must follow the following json format:
+```json
+{{
+    "explanation": "Discuss whether the given competitive programming problem is solvable by using the above mentioned planning",
+    "confidence": "Confidence score regarding the solvability of the problem. Must be an integer between 0 and 100."
+}}
+```
+"""
+
+mapcoder_coding_prompt = """
+Given a competitive programming problem generate Python code to solve the problem.
+
+## Relevant Algorithm to solve the next problem:
+{algorithm}
+## Problem to be solved:
+{problem_desc}
+## Planning: 
+{plan}
+## Sample Input/Outputs: 
+{examples}
+## Let's think step by step.
+
+------------
+Important: Your response must follow the following format:
+```python
+# your code here
+```
+"""
+
+mapcoder_debugging_prompt = """
+Given a competitive programming problem you have generated code to solve the problem. 
+But the generated code cannot pass sample test cases. Improve your code to solve the problem correctly.
+
+## Relevant Algorithm to solve the next problem:
+{algorithm}
+## Problem to be solved:
+{problem_desc}
+## Planning: 
+{plan}
+## Code: 
+{code}
+## Modified Planning:
+## Let's think step by step to modify code for solving this problem.
+
+----------------
+Important: Your response must follow the following format:
+
+```python
+# your code here
+```
+"""

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SshConfigs">
+    <configs>
+      <sshConfig host="superpod.ust.hk" id="abd1bc80-465e-472e-b9c5-40c8e0770228" keyPath="C:\Users\DSB\.ssh\id_rsa_ust" port="22" nameFormat="DESCRIPTIVE" username="zcaoas" useOpenSSHConfig="true" />
+    </configs>
+  </component>
+</project>

@@ -1,6 +1,8 @@
 import argparse
 import json
 import os
+
+from mapcoder import query_mapcoder
 from preprocess import load_dataset
 from tqdm import tqdm
 from query import query_code_master
@@ -94,11 +96,11 @@ def main():
         pass_rate = pass_count / len(data)
         avg_input_tokens = input_tokens_total / len(data)
         avg_output_tokens = output_tokens_total / len(data)
-        print(f"pass_rate: {pass_rate}.4f")
+        print(f"pass_rate: {pass_rate}")
         print(f"avg input token: {avg_input_tokens}")
         print(f"avg output token: {avg_output_tokens}")
-        print(f"avg problem cost: {avg_input_tokens * input_token_cost + avg_output_tokens * output_token_cost}.2f")
-        print(f"fitness: {sum(fitness_list) / len(fitness_list)}.4f")
+        print(f"avg problem cost: {avg_input_tokens * input_token_cost + avg_output_tokens * output_token_cost}")
+        print(f"fitness: {sum(fitness_list) / len(fitness_list)}")
 
     elif args.method == "greedy":
         max_trys = args.greedy_search_iterations * args.evolution_iterations # to compare fairly
@@ -129,12 +131,48 @@ def main():
         pass_rate = pass_count / len(data)
         avg_input_tokens = input_tokens_total / len(data)
         avg_output_tokens = output_tokens_total / len(data)
-        print(f"pass_rate: {pass_rate}.4f")
+        print(f"pass_rate: {pass_rate}")
         print(f"avg input token: {avg_input_tokens}")
         print(f"avg output token: {avg_output_tokens}")
-        print(f"avg problem cost: {avg_input_tokens * input_token_cost + avg_output_tokens * output_token_cost}.2f")
-        print(f"fitness: {sum(fitness_list) / len(fitness_list)}.4f")
-
+        print(f"avg problem cost: {avg_input_tokens * input_token_cost + avg_output_tokens * output_token_cost}")
+        print(f"fitness: {sum(fitness_list) / len(fitness_list)}")
+    elif args.method == "mapcoder":
+        pass_count = 0
+        input_tokens_total = 0
+        output_tokens_total = 0
+        fitness_list = []
+        for i, problem in tqdm(enumerate(data), total=len(data),
+                               desc="Running mapcoder with model {}".format(args.model)):
+            problem_desc = problem["problem_description"]
+            examples = problem["examples"]
+            test_examples = problem["test_examples"]  # true test_cases
+            rerun = True
+            for j in range(4):
+                if rerun:
+                    try:
+                        success, input_tokens, output_tokens, fitness = query_mapcoder(problem_desc=problem_desc, samples=examples,
+                                                                                   test_samples=test_examples, k_sample=3,
+                                                                                   greedy_search_iteration=args.greedy_search_iterations,
+                                                                                   model=args.model)
+                        rerun = False
+                        pass_count += success
+                        fitness_list.append(fitness)
+                        input_tokens_total += input_tokens
+                        output_tokens_total += output_tokens
+                    except Exception as e:
+                        print(e)
+                if j == 3 and rerun:
+                    fitness_list.append(0)
+                    input_tokens_total += int(input_tokens_total / (i+1))
+                    output_tokens_total += int(output_tokens_total / (i+1))
+        pass_rate = pass_count / len(data)
+        avg_input_tokens = input_tokens_total / len(data)
+        avg_output_tokens = output_tokens_total / len(data)
+        print(f"pass_rate: {pass_rate}")
+        print(f"avg input token: {avg_input_tokens}")
+        print(f"avg output token: {avg_output_tokens}")
+        print(f"avg problem cost: {avg_input_tokens * input_token_cost + avg_output_tokens * output_token_cost}")
+        print(f"fitness: {sum(fitness_list) / len(fitness_list)}")
     elif args.method == "cot":
         max_trys = args.greedy_search_iterations * args.evolution_iterations
         for problem in tqdm(data):

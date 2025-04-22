@@ -29,9 +29,12 @@ def query_code_master(problem_desc, samples=None, test_samples=None, counterfact
     else:
         good_samples = None
     additional_samples, notes = thinker.specific_thinking(problem_desc, good_samples, model=model)
-    base_plans = []
+    base_plan = ""
+    base_score = 0
+    base_code = ""
     for i in range(evolution_iterations):
-        plans = planner.planning(problem_desc, base_plans, good_samples, additional_samples, notes, k_sample, model=model)
+        print(base_plan)
+        plans = planner.planning(problem_desc, base_plan, good_samples, additional_samples, notes, k_sample, model=model)
         planner.plans = sorted(plans, key=lambda plan: plan["confidence"], reverse=True)
         planner.print_plans()
         print("Logs: Try to solve the problem...")
@@ -44,18 +47,25 @@ def query_code_master(problem_desc, samples=None, test_samples=None, counterfact
                 print(e)
                 fitness = 0
             print(f"evo{i}, base, fitness: {fitness}")
-            base_plans.append({"plan": planner.plans[0]["plan"], "code": code, "fitness": fitness})
+            if fitness > base_score or not base_plan:
+                base_score = fitness
+                base_plan = planner.plans[0]["plan"]
+                base_code = code
             for j in range(greedy_search_iterations):
-                print(base_plans)
-                revised_plan, revised_code = debugger.debug(problem_desc, base_plans[0]["plan"], base_plans[0]["code"])
+                revised_plan, revised_code = debugger.debug(problem_desc, base_plan, base_code, temperature=0.2)
+                print(revised_code)
+                if not revised_code:
+                    continue
                 try:
-                    revised_fitness = coder.fast_tsp_run(code)
+                    revised_fitness = coder.fast_tsp_run(revised_code)
                 except Exception as e:
                     print(e)
                     revised_fitness = 0
                 print(f"evo{i}, search{j}, fitness: {revised_fitness}")
-                base_plans.append({"plan": revised_plan, "code": revised_code, "fitness": revised_fitness})
-                base_plans = base_plans.sort(key=lambda plan: plan["fitness"], reverse=True)
+                if revised_fitness > base_score:
+                    base_score = fitness
+                    base_plan = revised_plan
+                    base_code = revised_code
         else:
             true_res, run_res, pass_count = coder.run(code, good_samples, verbose=verbose)
             if pass_count == len(true_res):
@@ -81,6 +91,11 @@ def query_code_master(problem_desc, samples=None, test_samples=None, counterfact
                     r_res = run_res[j]
                     unfit_problems.append({"input": good_samples[j]["input"], "output": t_res, "program_output": r_res, "explanation": good_samples[j]["explanation"]})
 
+                if unfitness < base_score or not base_plan:
+                    base_score = unfitness
+                    base_plan = planner.plans[0]["plan"]
+                    base_code = code
+
                 print("unfit_problems:", unfit_problems)
                 evo_plan = planner.plans[0]["plan"] # set the plan to be evolved
                 local_plans.append({"plan": evo_plan, "unfitness": unfitness})
@@ -89,6 +104,8 @@ def query_code_master(problem_desc, samples=None, test_samples=None, counterfact
                     evo_plan, evo_code = debugger.debug(problem_desc, evo_plan, evo_code, unfit_problems, model)
                     if verbose:
                         print(f"evo{j}_code:\n", evo_code)
+                    if not evo_code:
+                        continue
                     true_res, run_res, pass_count = coder.run(evo_code, good_samples, verbose=verbose)
 
                     if pass_count == len(true_res):
@@ -107,9 +124,12 @@ def query_code_master(problem_desc, samples=None, test_samples=None, counterfact
                         local_plans.append({"plan": evo_plan, "unfitness": unfitness})
                 # If still fail, enter evolution, update base plan
                 local_plans = sorted(local_plans, key=lambda plan: plan["unfitness"])
-                base_plans.append(local_plans[0])
+                base_plan = local_plans[0]["plan"] if local_plans[0]["unfitness"] < base_score else base_plan
+                base_score = local_plans[0]["unfitness"] if local_plans[0]["unfitness"] < base_score else base_score
+                base_code = local_plans[0]["plan"] if local_plans[0]["unfitness"] < base_score else base_code
 
-    print(base_plans)
+
+    print(base_plan)
     total_tokens_in = planner.input_tokens_counts + coder.input_tokens_counts + thinker.input_tokens_total + debugger.input_tokens_total
     total_tokens_out = planner.output_tokens_counts + coder.output_tokens_counts + thinker.output_tokens_total + debugger.output_tokens_total
     return 0, total_tokens_in, total_tokens_out, 0

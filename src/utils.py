@@ -1,5 +1,6 @@
 import json
 import ast
+import xml.etree.ElementTree as ET
 from openai import AzureOpenAI
 
 client = AzureOpenAI(
@@ -149,3 +150,45 @@ def find_tsp_files(directory):
             if "json" in file and "solution" not in file:
                 file_list.append(file)
     return file_list
+
+def get_element_text(element):
+    """递归获取元素及其子元素的文本内容"""
+    if element is None:
+        return ""
+    text = element.text or ""
+    for child in element:
+        text += get_element_text(child)
+        if child.tail:
+            text += child.tail
+    return text.strip()
+
+
+def extract_problem_and_algorithm(xml_str):
+    start_index = xml_str.find("<root>")
+    end_index = xml_str.rfind("</root>") + 7
+    xml_str = xml_str[start_index:end_index]
+    """从XML字符串中提取problem的描述、计划及algorithm内容"""
+    try:
+        root = ET.fromstring(xml_str)
+    except ET.ParseError:
+        return {"error": "Invalid XML format"}
+
+    # 提取所有problem的描述和计划
+    problems = root.findall('problem')
+    descriptions = []
+    plans = []
+    for i, problem in enumerate(problems):
+        desc_elem = problem.find('description')
+        plan_elem = problem.find('planning')
+        descriptions.append(f"Problem id: {i}\n" + get_element_text(desc_elem))
+        plans.append(f"Problem id: {i}\n" + get_element_text(plan_elem))
+
+    # 提取algorithm内容
+    algorithm_elem = root.find('algorithm')
+    algorithm = get_element_text(algorithm_elem)
+
+    return {
+        "problem_descriptions": descriptions,
+        "problem_plans": plans,
+        "algorithm": algorithm
+    }

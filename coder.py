@@ -1,4 +1,4 @@
-from src.prompts import coder_prompt
+from src.prompts import coder_prompt, mapcoder_coding_prompt
 from src.utils import request, parser_codes, sample_decoder, get_tsp_length
 from nbconvert.preprocessors import ExecutePreprocessor
 import ast
@@ -227,3 +227,15 @@ class Coder:
         #     fitness = 0
         fitness = get_tsp_length()
         return fitness
+
+    def mapcoder_writing(self, algorithm, problem_desc, samples=None, model="gpt-4o-mini"):
+        if samples:
+            samples_info = sample_decoder(samples)
+        else:
+            samples_info = ""
+        mapcoder_coding_query = mapcoder_coding_prompt.format(algorithm=algorithm, problem_desc=problem_desc, examples=samples_info)
+        res, input_tokens, output_tokens = request(mapcoder_coding_query, model=model)
+        self.input_tokens_counts += input_tokens
+        self.output_tokens_counts += output_tokens
+        code = parser_codes(res)
+        return code

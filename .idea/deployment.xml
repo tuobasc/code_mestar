@@ -9,17 +9,17 @@
           </mappings>
         </serverdata>
       </paths>
-      <paths name="nifei@211.81.55.161:7002 password (2)">
+      <paths name="ubuntu@172.28.102.23:22 agent">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
-      <paths name="ubuntu@172.28.102.23:22 agent">
+      <paths name="zcaoas@superpod.ust.hk">
         <serverdata>
           <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/home/zcaoas/code_master" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
