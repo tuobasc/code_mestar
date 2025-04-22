@@ -81,7 +81,7 @@ def query_cot(problem_desc, samples, test_samples=None, max_trys=9, model="gpt-4
                 print("No test samples.")
                 print("######## Codes:")
                 print(code)
-                break
+                return 1, input_tokens_total, output_tokens_total, 1
 
     return 0, input_tokens_total, output_tokens_total, 0 # fail to pass even examples
 

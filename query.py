@@ -101,9 +101,9 @@ def query_code_master(problem_desc, samples=None, test_samples=None, counterfact
                 local_plans.append({"plan": evo_plan, "unfitness": unfitness})
                 evo_code = code # set the code to be evolved
                 for j in range(greedy_search_iterations):
+                    print("try to debugging....")
                     evo_plan, evo_code = debugger.debug(problem_desc, evo_plan, evo_code, unfit_problems, model)
-                    if verbose:
-                        print(f"evo{j}_code:\n", evo_code)
+                    print(f"evo{j}_code:\n", evo_code)
                     if not evo_code:
                         continue
                     true_res, run_res, pass_count = coder.run(evo_code, good_samples, verbose=verbose)

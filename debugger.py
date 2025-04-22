@@ -24,11 +24,12 @@ class Debugger:
                     self.output_tokens_total += output_tokens
                     evolved = parser_json(res)
                     rerun = False
+                    return evolved["revised_plan"], evolved["revised_code"]
                 except Exception as e:
                     print(e)
-        if rerun:
-            return "", ""
-        return evolved["revised_plan"], evolved["revised_code"]
+
+        return "", ""
+
 
 
     def mapcoder_debug(self, algorithm, problem_desc, plan, code, temperature=0, model="gpt-4o-mini"):

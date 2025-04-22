@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 
+from cot import query_cot
 from mapcoder import query_mapcoder
 from preprocess import load_dataset
 from tqdm import tqdm
@@ -18,9 +19,9 @@ parser.add_argument('--verbose', action="store_true", help='verbose on')
 parser.add_argument('--greedy_search_iterations', type=int, default=3, help='code master max debug times')
 parser.add_argument('--evolution_iterations', type=int, default=3, help='code master max evolution times')
 
-
 # 解析参数
 args = parser.parse_args()
+print(args)
 
 # todo: 查找一下不同model的cost
 if args.model == "gpt-4o-mini":
@@ -74,7 +75,7 @@ def main():
             rerun = True
             for j in range(4):
                 if rerun:
-                    print("rerun:",  rerun)
+                    # print("rerun:",  rerun)
                     try:
                         success, input_tokens, output_tokens, fitness = query_code_master(problem_desc=problem_desc, samples=examples, test_samples=test_examples,
                                       counterfactual_thinking=args.counterfactual_think,
@@ -173,9 +174,47 @@ def main():
         print(f"avg problem cost: {avg_input_tokens * input_token_cost + avg_output_tokens * output_token_cost}")
         print(f"fitness: {sum(fitness_list) / len(fitness_list)}")
     elif args.method == "cot":
+        pass_count = 0
+        input_tokens_total = 0
+        output_tokens_total = 0
+        fitness_list = []
         max_trys = args.greedy_search_iterations * args.evolution_iterations
-        for problem in tqdm(data):
-            pass #todo：添加cot baseline, 用cot测多次，只要在示例中通过则submit
+        for _, problem in tqdm(enumerate(data), total=len(data),
+                               desc="Running cot with model {}".format(args.model)):
+            problem_desc = problem["problem_description"]
+            examples = problem["examples"]
+            test_examples = problem["test_examples"]  # true test_cases
+            rerun = True
+            for j in range(4):
+                if rerun:
+                    try:
+                        success, input_tokens, output_tokens, fitness = query_cot(problem_desc=problem_desc,
+                                                                                       samples=examples,
+                                                                                       test_samples=test_examples,
+                                                                                       max_trys=max_trys,
+                                                                                       model=args.model)
+                        rerun = False
+                        pass_count += success
+                        fitness_list.append(fitness)
+                        input_tokens_total += input_tokens
+                        output_tokens_total += output_tokens
+                    except Exception as e:
+                        print(e)
+                if j == 3 and rerun:
+                    fitness_list.append(0)
+                    input_tokens_total += int(input_tokens_total / (i + 1))
+                    output_tokens_total += int(output_tokens_total / (i + 1))
+        pass_rate = pass_count / len(data)
+        avg_input_tokens = input_tokens_total / len(data)
+        avg_output_tokens = output_tokens_total / len(data)
+        print(f"pass_rate: {pass_rate}")
+        print(f"avg input token: {avg_input_tokens}")
+        print(f"avg output token: {avg_output_tokens}")
+        print(f"avg problem cost: {avg_input_tokens * input_token_cost + avg_output_tokens * output_token_cost}")
+        print(f"fitness: {sum(fitness_list) / len(fitness_list)}")
+
+
+
 
 if __name__ == '__main__':
     main()
