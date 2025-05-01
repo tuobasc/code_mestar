@@ -228,12 +228,12 @@ class Coder:
         fitness = get_tsp_length()
         return fitness
 
-    def mapcoder_writing(self, algorithm, problem_desc, samples=None, model="gpt-4o-mini"):
+    def mapcoder_writing(self, algorithm, problem_desc, plan, samples=None, model="gpt-4o-mini"):
         if samples:
             samples_info = sample_decoder(samples)
         else:
             samples_info = ""
-        mapcoder_coding_query = mapcoder_coding_prompt.format(algorithm=algorithm, problem_desc=problem_desc, examples=samples_info)
+        mapcoder_coding_query = mapcoder_coding_prompt.format(algorithm=algorithm, problem_desc=problem_desc, plan=plan, examples=samples_info)
         res, input_tokens, output_tokens = request(mapcoder_coding_query, model=model)
         self.input_tokens_counts += input_tokens
         self.output_tokens_counts += output_tokens

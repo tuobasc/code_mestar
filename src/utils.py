@@ -4,9 +4,9 @@ import xml.etree.ElementTree as ET
 from openai import AzureOpenAI
 
 client = AzureOpenAI(
-    api_key="7aecff8ad2084786a614da48e51f092d",
+    api_key="your api key",
     api_version="2024-10-21",
-    azure_endpoint="https://hkust.azure-api.net"
+    azure_endpoint="https://hkust.azure-api.net",
 )
 
 def request(content, temperature=0, model="gpt-4o-mini"):
@@ -171,7 +171,10 @@ def extract_problem_and_algorithm(xml_str):
     try:
         root = ET.fromstring(xml_str)
     except ET.ParseError:
-        return {"error": "Invalid XML format"}
+        return {"problem_descriptions": [],
+                "problem_plans": [],
+                "algorithm": ""
+        }
 
     # 提取所有problem的描述和计划
     problems = root.findall('problem')

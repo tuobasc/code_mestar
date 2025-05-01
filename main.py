@@ -1,6 +1,8 @@
 import argparse
 import json
 import os
+# nohup python main.py --counterfactual_think --verbose --dataset_name "HumanEvalET" --split_test_ratio 0.99 --method "code-master" --model "gpt-4o-mini" > res_ab_ratio_0.99_n1.txt 2>&1 &
+# nohup python main.py --counterfactual_think --verbose --dataset_name "HumanEvalET" --split_test_ratio 0.9 --method "code-master" --model "gpt-4o-mini" > res_ab_no_another_v_2.txt 2>&1 &
 
 from cot import query_cot
 from mapcoder import query_mapcoder
@@ -12,7 +14,7 @@ from greedy import query_greedy
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset_name', type=str, default="APPS", help='the name of dataset')
 parser.add_argument('--split_test_ratio', type=float, default=0.9, help='the ratio of test instances')
-parser.add_argument('--method', type=str, default="greedy", choices=["greedy", "code-master", "cot"],help='the method to use')
+parser.add_argument('--method', type=str, default="greedy", choices=["greedy", "code-master", "cot", "mapcoder"],help='the method to use')
 parser.add_argument('--model', type=str, default="gpt-4o-mini", choices=["gpt-4o-mini", "deepseek-r1", "gpt-4o"], help='api model')
 parser.add_argument('--counterfactual_think', action="store_true", help='if think before plan')
 parser.add_argument('--verbose', action="store_true", help='verbose on')
@@ -121,6 +123,7 @@ def main():
                         input_tokens_total += input_tokens
                         output_tokens_total += output_tokens
                         fitness_list.append(fitness)
+                        rerun = False
                     except Exception as e:
                         print(e)
                 if j == 3 and rerun:
@@ -153,7 +156,7 @@ def main():
                         success, input_tokens, output_tokens, fitness = query_mapcoder(problem_desc=problem_desc, samples=examples,
                                                                                    test_samples=test_examples, k_sample=3,
                                                                                    greedy_search_iteration=args.greedy_search_iterations,
-                                                                                   model=args.model)
+                                                                                   model=args.model, verbose=True)
                         rerun = False
                         pass_count += success
                         fitness_list.append(fitness)
@@ -192,7 +195,7 @@ def main():
                                                                                        samples=examples,
                                                                                        test_samples=test_examples,
                                                                                        max_trys=max_trys,
-                                                                                       model=args.model)
+                                                                                       model=args.model, verbose=args.verbose)
                         rerun = False
                         pass_count += success
                         fitness_list.append(fitness)

@@ -58,9 +58,10 @@ def query_greedy(problem_desc, samples, test_samples=None, max_trys=9, model="gp
         input_tokens_total += input_tokens
         output_tokens_total += output_tokens
         code = parser_codes(res)
-        test_cases_res, exec_res, pass_count = coder.run(code, samples) # 在部分测试用例上可以通过则submit
+        test_cases_res, exec_res, pass_count = coder.run(code, samples, verbose=True) # 在部分测试用例上可以通过则submit
         if pass_count == len(test_cases_res):
             # submit
+            print("Pass test case! Submit")
             if test_samples:
                 test_cases_res, exec_res, pass_count = coder.run(code, test_samples)
                 fitness = pass_count / len(test_cases_res)

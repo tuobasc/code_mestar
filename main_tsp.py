@@ -1,11 +1,13 @@
 import argparse
 from cot import tsp_query_cot
 from greedy import tsp_query_greedy
+from mapcoder import query_mapcoder
 from query import query_code_master
 from src.utils import find_tsp_files
 
+# nohup python main_tsp.py > res_ab_no_another_tsp_v1.txt 2>&1 &
 parser = argparse.ArgumentParser()
-parser.add_argument('--method', type=str, default="code-master", choices=["greedy", "code-master", "cot"],help='the method to use')
+parser.add_argument('--method', type=str, default="code-master", choices=["greedy", "code-master", "cot", "mapcoder"],help='the method to use')
 parser.add_argument('--model', type=str, default="gpt-4o-mini", choices=["gpt-4o-mini", "deepseek-r1", "gpt-4o"], help='api model')
 parser.add_argument("--max_trys", type=int, default=9, help="max number of tries")
 args = parser.parse_args()
@@ -49,7 +51,7 @@ def main():
     elif args.method == "code-master":
         query_code_master(problem_desc, model=args.model, optimization=True, verbose=True)
     elif args.method == "mapcoder":
-        pass
+        query_mapcoder(problem_desc, model=args.model, optimization=True, verbose=True)
 
 if __name__ == '__main__':
     main()

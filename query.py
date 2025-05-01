@@ -32,14 +32,18 @@ def query_code_master(problem_desc, samples=None, test_samples=None, counterfact
     base_plan = ""
     base_score = 0
     base_code = ""
+    # additional_samples = None
+    notes = ""
+    good_samples = samples
     for i in range(evolution_iterations):
         # print(base_plan)
         if i > 0:
             if verbose:
                 print("Logs: Resetting the understanding.")
-            good_samples = samples
-            additional_samples = None
-            notes = ""
+            # base_plan = ""
+            # good_samples = samples
+            # additional_samples = None
+            # notes = ""
         plans = planner.planning(problem_desc, base_plan, good_samples, additional_samples, notes, k_sample, model=model)
         planner.plans = sorted(plans, key=lambda plan: plan["confidence"], reverse=True)
         if verbose:
@@ -81,6 +85,7 @@ def query_code_master(problem_desc, samples=None, test_samples=None, counterfact
                 print("Logs: Pass through sample cases!")
                 total_tokens_in = planner.input_tokens_counts + coder.input_tokens_counts + thinker.input_tokens_total + debugger.input_tokens_total
                 total_tokens_out = planner.output_tokens_counts + coder.output_tokens_counts + thinker.output_tokens_total + debugger.output_tokens_total
+
                 if test_samples:
                     success, fitness = submit(coder, code, test_samples, verbose=verbose)
                     return success, total_tokens_in, total_tokens_out, fitness

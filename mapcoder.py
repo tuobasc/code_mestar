@@ -17,16 +17,29 @@ def submit(coder, code, test_samples, verbose):
 
 def query_mapcoder(problem_desc, samples=None, test_samples=None, k_sample=3, model="gpt-4o-mini", greedy_search_iteration=3, optimization=False, verbose=False):
     planner = Planner()
-    plans, algorithm = planner.mapcoder_planning(problem_desc, samples, k_sample, model)
+    plans, algorithm = planner.mapcoder_planning(problem_desc, samples, k_sample, model, verbose=verbose)
     coder = Coder()
     debugger = Debugger()
     for plan in plans:
         if verbose:
             print("selected plan: ", plan[0])
             print("confidence: ", plan[1])
-        code = coder.mapcoder_writing(algorithm, problem_desc, samples, model)
+        code = coder.mapcoder_writing(algorithm, problem_desc, plan, samples, model)
         if optimization:
-            fast_tsp_run(code)
+            best_fitness = coder.fast_tsp_run(code)
+            print("Fitness:", best_fitness)
+            evo_code = code
+            for j in range(greedy_search_iteration):
+                revised_code = debugger.mapcoder_debug(algorithm, problem_desc, plan, evo_code, temperature=0.5,
+                                                   model="gpt-4o-mini")
+                revised_fitness = coder.fast_tsp_run(code)
+                if verbose:
+                    print(f"debug{j}, revised code: \n", revised_code)
+                    print(f"debug{j}, revised fitness: \n", revised_fitness)
+                if revised_fitness > best_fitness:
+                    evo_code = revised_code
+                    best_fitness = revised_fitness
+            print("best_fitness:", best_fitness)
         else:
             sim_cases_res, run_res, pass_count = coder.run(code, samples)
             if pass_count == len(sim_cases_res):
@@ -44,10 +57,10 @@ def query_mapcoder(problem_desc, samples=None, test_samples=None, k_sample=3, mo
                 # DEBUG
                 for j in range(greedy_search_iteration):
                     evo_code = code
-                    revised_code = debugger.mapcoder_debug(algorithm, problem_desc, plan, evo_code, temperature=0.2, model="gpt-4o-mini")
+                    revised_code = debugger.mapcoder_debug(algorithm, problem_desc, plan, evo_code, temperature=0.5, model="gpt-4o-mini")
                     if verbose:
-                        print("debug{j}, revised code: \n", revised_code)
-                    sim_cases_res, run_res, pass_count = coder.run(revised_code, samples)
+                        print(f"debug{j}, revised code: \n", revised_code)
+                    sim_cases_res, run_res, pass_count = coder.run(revised_code, samples, verbose=verbose)
                     if pass_count == len(sim_cases_res):
                         # SUBMIT
                         if test_samples:

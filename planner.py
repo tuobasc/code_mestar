@@ -64,12 +64,16 @@ class Planner:
             print("plan_confidence: ", plan["confidence"])
             print("--------------------------------------")
 
-    def mapcoder_planning(self, problem_desc, samples=None, k_sample=3, model="gpt-4o-mini"):
+    def mapcoder_planning(self, problem_desc, samples=None, k_sample=3, model="gpt-4o-mini", verbose=False):
         mapcoder_retrieval_query = mapcoder_retrieval_prompt.format(problem_desc=problem_desc)
         xml_res, input_tokens, output_tokens = request(mapcoder_retrieval_query, model=model)
+        if verbose:
+            print(xml_res)
         self.input_tokens_counts += input_tokens
         self.output_tokens_counts += output_tokens
         probs_algos = extract_problem_and_algorithm(xml_res)
+        if verbose:
+            print(probs_algos)
         retrieval_probs = "\n".join(probs_algos["problem_descriptions"])
         retrieval_plans = "\n".join(probs_algos["problem_plans"])
         algorithm = probs_algos["algorithm"]
